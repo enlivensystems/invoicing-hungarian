@@ -16,14 +16,14 @@ Add as a dependency:
 "systems.enliven.invoicing.hungarian" %% "core" % "0.1.0"
 ```
 
-Don't let low the version number fool you. See Test section for more details.
+Don't let the low version number fool you. See Test section for more details.
 Please note that currently we only provide Scala 2.12 builds. Drop us a message in case you need
 a build for Scala 2.11 or Scala 2.13. Java port is possible. See more info below.
 
 ## Prerequisites
 
 You may have to add NAV servers to your Java trust store manually, otherwise you'll get errors
-like: `General SSLEngine problem`
+like: `General SSLEngine problem`.
 For this we include a script in `/development/import-certificates.sh`. Please fine-tune the
 script to your needs, especially by setting your `JAVA_HOME` correctly.
 
