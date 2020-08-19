@@ -50,7 +50,7 @@ class suiteSerialization extends baseSuite {
   def inputStreamsFromResourceDirectory(directory: String): List[(String, InputStream)] = {
     val URI = getClass.getResource(directory).toURI
 
-    log.info("Looking for XML files on URI [{}]", URI.toString)
+    log.info("Looking for XML files on URI [{}].", URI.toString)
 
     if (URI.getScheme == "jar") {
       log.info("URI scheme is [jar].")

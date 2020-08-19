@@ -58,10 +58,10 @@ class Connection private(configuration: Configuration,
                             invoices: Invoices)(implicit token: Token): Unit =
     api.manageInvoice(invoices.toRequest).onComplete {
       case Success(value) =>
-        log.debug("Manage invoice finished")
+        log.debug("Manage invoice finished.")
         replyTo ! value
       case Failure(exception) =>
-        log.error("Could not manage invoice due to [{}] with message [{}]",
+        log.error("Could not manage invoice due to [{}] with message [{}].",
           exception.getClass.getName,
           exception.getMessage)
     }
@@ -73,7 +73,7 @@ class Connection private(configuration: Configuration,
           case Success(response) =>
             onSuccess(response)
           case Failure(exception) =>
-            log.error("Could not refresh exchange token due to [{}]", exception.getMessage)
+            log.error("Could not refresh exchange token due to [{}].", exception.getMessage)
         }
       case Failure(throwable: Throwable) => // Network error
         log.error("Could not refresh exchange token due to [{}] with message [{}].",
@@ -95,19 +95,19 @@ class Connection private(configuration: Configuration,
     timers.startSingleTimer(Connection.TimerKey, Protocol.PreloadToken, 100.milliseconds)
     Behaviors.receiveMessage {
       case Protocol.ManageInvoice(replyTo, invoices) =>
-        log.debug("Received ManageInvoice request")
+        log.debug("Received [ManageInvoice] request.")
         if (preloadedToken.isDefined) {
-          log.info("Using preloaded token")
+          log.info("Using preloaded token.")
           implicit val token: Token = preloadedToken.get
           preloadedToken = None
           timers.startSingleTimer(Connection.TimerKey, Protocol.PreloadToken, 1.seconds)
           manageInvoice(replyTo, invoices)
         } else {
-          log.debug("Requesting new token")
+          log.debug("Requesting new token.")
           buffer.stash(Protocol.WrappedManageInvoice(replyTo, invoices))
           refreshToken {
             response: TokenExchangeResponse =>
-              log.debug("New token acquired")
+              log.debug("New token acquired.")
               tokens = tokens :+ new Token(response, api.getExchangeKey)
               buffer.unstash(Behaviors.same, 1, identity)
           }
