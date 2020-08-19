@@ -10,8 +10,14 @@ class suiteRequests extends invoicingSuite {
 
   val invoices: Invoices = Invoices(
     Invoices.Invoice(Invoices.Operation.create, DatatypeConverter.parseBase64Binary("something")) ::
-      Invoices.Invoice(Invoices.Operation.modify, DatatypeConverter.parseBase64Binary("something")) ::
-      Invoices.Invoice(Invoices.Operation.storno, DatatypeConverter.parseBase64Binary("dark side")) :: Nil
+      Invoices.Invoice(
+        Invoices.Operation.modify,
+        DatatypeConverter.parseBase64Binary("something")
+      ) ::
+      Invoices.Invoice(
+        Invoices.Operation.storno,
+        DatatypeConverter.parseBase64Binary("dark side")
+      ) :: Nil
   )
 
   describe("The request API") {
@@ -22,12 +28,14 @@ class suiteRequests extends invoicingSuite {
 
         response match {
           case Success(response) =>
-            response.result.errorCode should be (None)
-            response.result.message should be (None)
+            response.result.errorCode should be(None)
+            response.result.message should be(None)
           case Failure(exception) =>
-            log.error("Failed with [{}] with message [{}]",
+            log.error(
+              "Failed with [{}] with message [{}]",
               exception.getClass.getName,
-              exception.getMessage)
+              exception.getMessage
+            )
             fail
         }
       }
@@ -43,13 +51,15 @@ class suiteRequests extends invoicingSuite {
           case Success(_) =>
             completed = completed + 1
           case Failure(exception) =>
-            log.error("Failed with [{}] with message [{}]",
+            log.error(
+              "Failed with [{}] with message [{}]",
               exception.getClass.getName,
-              exception.getMessage)
+              exception.getMessage
+            )
         }(invoicing.executionContext))
 
       eventually {
-        completed should be (testCount)
+        completed should be(testCount)
       }
     }
   }

@@ -46,7 +46,6 @@ class suiteSerialization extends baseSuite {
     }
   }
 
-
   def inputStreamsFromResourceDirectory(directory: String): List[(String, InputStream)] = {
     val URI = getClass.getResource(directory).toURI
 
