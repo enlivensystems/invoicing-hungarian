@@ -1,7 +1,15 @@
 package systems.enliven.invoicing.hungarian
 
+import java.util.GregorianCalendar
+
 import javax.xml.bind.DatatypeConverter
 import systems.enliven.invoicing.hungarian.api.Api.Protocol.Request.Invoices
+import systems.enliven.invoicing.hungarian.api.Api.Protocol.Request.Invoices.{
+  Address,
+  Issuer,
+  Item,
+  Recipient
+}
 
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
@@ -9,12 +17,63 @@ import scala.util.{Failure, Success}
 class suiteRequests extends invoicingSuite {
 
   val invoices: Invoices = Invoices(
-    Invoices.Invoice(Invoices.Operation.create, DatatypeConverter.parseBase64Binary("something")) ::
-      Invoices.Invoice(
+    Invoices.Raw(Invoices.Operation.create, DatatypeConverter.parseBase64Binary("something")) ::
+      Invoices.Raw(
         Invoices.Operation.modify,
         DatatypeConverter.parseBase64Binary("something")
       ) ::
-      Invoices.Invoice(
+      Invoices.Smart(
+        number = "12345",
+        reference = None,
+        issued = new GregorianCalendar(),
+        delivered = new GregorianCalendar(),
+        paid = new GregorianCalendar(),
+        currencyCode = "HUF",
+        exchangeRate = 0.0,
+        periodical = false,
+        issuer = Issuer(
+          taxNumber = "",
+          taxCode = "",
+          taxCountry = "HU",
+          communityTaxNumber = "",
+          name = "",
+          address = Address(
+            countryCode = "",
+            region = None,
+            postalCode = "",
+            city = "",
+            streetName = "",
+            publicPlaceCategory = ""
+          ),
+          bankAccountNumber = ""
+        ),
+        recipient = Recipient(
+          taxNumber = None,
+          taxCountry = None,
+          communityTaxNumber = None,
+          thirdStateTaxNumber = None,
+          name = "",
+          address = Address(
+            countryCode = "",
+            region = None,
+            postalCode = "",
+            city = "",
+            streetName = "",
+            publicPlaceCategory = ""
+          ),
+          bankAccountNumber = ""
+        ),
+        operation = Invoices.Operation.create,
+        items = Seq(
+          Item(
+            name = "",
+            quantity = 1,
+            price = 100,
+            intermediated = false
+          )
+        )
+      ) ::
+      Invoices.Raw(
         Invoices.Operation.storno,
         DatatypeConverter.parseBase64Binary("dark side")
       ) :: Nil

@@ -2,28 +2,50 @@ package systems.enliven.invoicing.hungarian.api
 
 import java.nio.charset.Charset
 import java.time.Instant
+import java.util.GregorianCalendar
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.Accept
 import akka.util.ByteString
-import scalaxb.{Base64Binary, XMLFormat}
+import javax.xml.datatype.DatatypeFactory
+import scalaxb.{Base64Binary, DataRecord, XMLFormat}
 import systems.enliven.invoicing.hungarian.core
 import systems.enliven.invoicing.hungarian.core.{Configuration, Logger}
 import systems.enliven.invoicing.hungarian.generated.{
+  AddressType,
+  CARD,
   CREATE,
+  CustomerInfoType,
+  DetailedAddressType,
+  ELECTRONICValue,
   GeneralErrorResponse,
+  InvoiceDataType,
+  InvoiceDetailType,
+  InvoiceHeadType,
+  InvoiceMainType,
   InvoiceOperationListType,
   InvoiceOperationType,
+  InvoiceReferenceType,
+  InvoiceType,
+  LineType,
+  LinesType,
   MODIFY,
   ManageInvoiceRequest,
   ManageInvoiceResponse,
+  NORMAL,
   ONLINE_SERVICE,
+  PIECE,
+  SERVICE,
   STORNO,
   SoftwareType,
+  SummaryType,
+  SupplierInfoType,
+  TaxNumberType,
   TokenExchangeRequest,
-  TokenExchangeResponse
+  TokenExchangeResponse,
+  _
 }
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
@@ -130,7 +152,7 @@ class Api(signingKeyOverride: Option[String] = None)(
 
 }
 
-object Api {
+object Api extends XMLProtocol {
 
   private def parse[T](data: String)(implicit format: XMLFormat[T]): T =
     scalaxb.fromXML[T](scala.xml.XML.loadString(data))
@@ -175,7 +197,7 @@ object Api {
                     case Invoices.Operation.storno =>
                       STORNO
                   },
-                  new Base64Binary(invoice.data.toVector)
+                  invoice.base64
                 )
             }
           )
@@ -184,7 +206,241 @@ object Api {
 
       object Invoices {
 
-        case class Invoice(operation: Operation.Value, data: Array[Byte])
+        trait Invoice {
+          val operation: Operation.Value
+
+          def base64: Base64Binary
+        }
+
+        case class Protocol(
+          operation: Operation.Value,
+          data: InvoiceDataType)
+         extends Invoice {
+          override def base64 = Base64Binary(Api.write(data))
+        }
+
+        case class Raw(
+          operation: Operation.Value,
+          data: Array[Byte])
+         extends Invoice {
+          override def base64 = new Base64Binary(data.toVector)
+        }
+
+        case class Smart(
+          number: String,
+          reference: Option[Reference],
+          issued: GregorianCalendar,
+          delivered: GregorianCalendar,
+          paid: GregorianCalendar,
+          currencyCode: String,
+          exchangeRate: Double,
+          periodical: Boolean,
+          issuer: Issuer,
+          recipient: Recipient,
+          operation: Operation.Value,
+          items: Seq[Item])
+         extends Invoice {
+          require(items.nonEmpty, "Invoice items may not be empty!")
+
+          override def base64: Base64Binary = {
+            val invoice = this
+            Base64Binary(Api.write[InvoiceDataType](InvoiceDataType(
+              invoice.number,
+              DatatypeFactory.newInstance.newXMLGregorianCalendar(
+                invoice.issued
+              ),
+              InvoiceMainType(
+                Seq(
+                  DataRecord[InvoiceType](
+                    namespace = None,
+                    key = Some(InvoiceType.getClass.getSimpleName),
+                    value = InvoiceType(
+                      invoice.reference.map(
+                        r => InvoiceReferenceType(r.number, r.reported, r.index)
+                      ),
+                      invoiceHead = InvoiceHeadType(
+                        supplierInfo = SupplierInfoType(
+                          TaxNumberType(
+                            invoice.issuer.taxNumber,
+                            Some(invoice.issuer.taxCode),
+                            Some(invoice.issuer.taxCountry)
+                          ),
+                          None,
+                          Some(invoice.issuer.communityTaxNumber),
+                          invoice.issuer.name,
+                          AddressType(
+                            DataRecord[DetailedAddressType](
+                              namespace = None,
+                              key = Some(DetailedAddressType.getClass.getSimpleName),
+                              value = DetailedAddressType(
+                                invoice.issuer.address.countryCode,
+                                invoice.issuer.address.region,
+                                invoice.issuer.address.postalCode,
+                                invoice.issuer.address.city,
+                                invoice.issuer.address.streetName,
+                                invoice.issuer.address.publicPlaceCategory,
+                                invoice.issuer.address.number,
+                                invoice.issuer.address.building,
+                                invoice.issuer.address.staircase,
+                                invoice.issuer.address.floor,
+                                invoice.issuer.address.door,
+                                invoice.issuer.address.identifier
+                              )
+                            )
+                          ),
+                          Some(invoice.issuer.bankAccountNumber),
+                          Some(false),
+                          None
+                        ),
+                        customerInfo = Option(CustomerInfoType(
+                          customerTaxNumber = invoice.recipient.taxNumber.map {
+                            taxNumber =>
+                              TaxNumberType(
+                                taxNumber,
+                                None,
+                                None
+                              )
+                          },
+                          groupMemberTaxNumber = None,
+                          communityVatNumber = invoice.recipient.communityTaxNumber,
+                          thirdStateTaxId = invoice.recipient.thirdStateTaxNumber,
+                          customerName = invoice.recipient.name,
+                          customerAddress = AddressType(
+                            DataRecord[DetailedAddressType](
+                              namespace = None,
+                              key = Some(DetailedAddressType.getClass.getSimpleName),
+                              value = DetailedAddressType(
+                                invoice.recipient.address.countryCode,
+                                invoice.recipient.address.region,
+                                invoice.recipient.address.postalCode,
+                                invoice.recipient.address.city,
+                                invoice.recipient.address.streetName,
+                                invoice.recipient.address.publicPlaceCategory,
+                                invoice.recipient.address.number,
+                                invoice.recipient.address.building,
+                                invoice.recipient.address.staircase,
+                                invoice.recipient.address.floor,
+                                invoice.recipient.address.door,
+                                invoice.recipient.address.identifier
+                              )
+                            )
+                          ),
+                          customerBankAccountNumber = None
+                        )),
+                        None,
+                        InvoiceDetailType(
+                          invoiceCategory = NORMAL,
+                          invoiceDeliveryDate = DatatypeFactory.newInstance.newXMLGregorianCalendar(
+                            invoice.delivered
+                          ),
+                          invoiceDeliveryPeriodStart = None,
+                          invoiceDeliveryPeriodEnd = None,
+                          invoiceAccountingDeliveryDate = None,
+                          periodicalSettlement = Some(invoice.periodical),
+                          smallBusinessIndicator = None,
+                          currencyCode = invoice.currencyCode,
+                          exchangeRate = BigDecimal(invoice.exchangeRate),
+                          selfBillingIndicator = None,
+                          paymentMethod = Some(CARD),
+                          paymentDate = Some(DatatypeFactory.newInstance.newXMLGregorianCalendar(
+                            invoice.paid
+                          )),
+                          cashAccountingIndicator = None,
+                          invoiceAppearance = ELECTRONICValue,
+                          electronicInvoiceHash = None,
+                          additionalInvoiceData = Seq.empty
+                        )
+                      ),
+                      invoiceLines = Some {
+                        var i = 0
+                        LinesType(invoice.items.map {
+                          item =>
+                            i = i + 1
+                            LineType(
+                              lineNumber = BigInt(i),
+                              lineModificationReference = None,
+                              referencesToOtherLines = None,
+                              advanceIndicator = None,
+                              productCodes = None,
+                              lineExpressionIndicator = false,
+                              lineNatureIndicator = Some(SERVICE),
+                              lineDescription = Some(item.name),
+                              quantity = Some(BigDecimal(item.quantity)),
+                              unitOfMeasure = Some(PIECE),
+                              unitOfMeasureOwn = None,
+                              unitPrice = Some(BigDecimal(item.price)),
+                              unitPriceHUF = None,
+                              lineDiscountData = None,
+                              linetypeoption = None,
+                              intermediatedService = Some(item.intermediated),
+                              aggregateInvoiceLineData = None,
+                              newTransportMean = None,
+                              depositIndicator = Some(false),
+                              marginSchemeIndicator = None,
+                              ekaerIds = None,
+                              obligatedForProductFee = None,
+                              GPCExcise = None,
+                              dieselOilPurchase = None,
+                              netaDeclaration = None,
+                              productFeeClause = None,
+                              lineProductFeeContent = Seq.empty,
+                              additionalLineData = Seq.empty
+                            )
+                        })
+                      },
+                      productFeeSummary = Seq.empty,
+                      invoiceSummary = SummaryType(
+                        Seq.empty,
+                        None
+                      )
+                    )
+                  )
+                )
+              )
+            )))
+          }
+
+        }
+
+        case class Recipient(
+          taxNumber: Option[String] = None,
+          taxCountry: Option[String] = None,
+          communityTaxNumber: Option[String] = None,
+          thirdStateTaxNumber: Option[String] = None,
+          name: String,
+          address: Address,
+          bankAccountNumber: String)
+
+        case class Address(
+          countryCode: String,
+          region: Option[String] = None,
+          postalCode: String,
+          city: String,
+          streetName: String,
+          publicPlaceCategory: String,
+          number: Option[String] = None,
+          building: Option[String] = None,
+          staircase: Option[String] = None,
+          floor: Option[String] = None,
+          door: Option[String] = None,
+          identifier: Option[String] = None)
+
+        case class Issuer(
+          taxNumber: String,
+          taxCode: String,
+          taxCountry: String = "HU",
+          communityTaxNumber: String,
+          name: String,
+          address: Address,
+          bankAccountNumber: String)
+
+        case class Item(
+          name: String,
+          quantity: Int,
+          price: Double,
+          intermediated: Boolean)
+
+        case class Reference(number: String, reported: Boolean = true, index: Int = 1)
 
         case object Operation extends Enumeration {
           val create, modify, storno = Value

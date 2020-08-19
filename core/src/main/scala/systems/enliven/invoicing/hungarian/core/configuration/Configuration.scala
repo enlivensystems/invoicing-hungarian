@@ -61,12 +61,21 @@ abstract class Configuration[
     .setAllowMissing(false)
     .setSyntax(ConfigSyntax.CONF)
 
-  configuration.checkValid(_defaults)
+  @transient private val _resource = ConfigFactory.parseResourcesAnySyntax(fromFile, _parseOptions)
 
   @transient private val _defaults =
     ConfigFactory.parseResourcesAnySyntax(referencePath, _parseOptions)
 
-  @transient private val _resource = ConfigFactory.parseResourcesAnySyntax(fromFile, _parseOptions)
+  private var configuration = (if (fromEnvironment) {
+                                 ConfigFactory
+                                   .systemProperties()
+                                   .withFallback(mergeConfigurations())
+                               } else {
+                                 mergeConfigurations()
+                               }).withOnlyPath(restrictTo.getOrElse(""))
+
+  configuration.checkValid(_defaults)
+
   log.info(
     s"This is the number [$instanceNumber] instance of configuration with class name " +
       s"[$className] restricted for keys starting with [${restrictTo.getOrElse("-")}]. " +
@@ -90,14 +99,6 @@ abstract class Configuration[
   if (!silent) {
     logState()
   }
-
-  private var configuration = (if (fromEnvironment) {
-                                 ConfigFactory
-                                   .systemProperties()
-                                   .withFallback(mergeConfigurations())
-                               } else {
-                                 mergeConfigurations()
-                               }).withOnlyPath(restrictTo.getOrElse(""))
 
   def logState(): Unit = {
     val maxLength = if (configuration.entrySet().asScala.nonEmpty) {

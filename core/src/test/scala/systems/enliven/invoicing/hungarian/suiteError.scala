@@ -9,7 +9,7 @@ import scala.util.{Failure, Success}
 class suiteError extends invoicingSuite {
 
   val invoice: Invoices.Invoice =
-    Invoices.Invoice(Invoices.Operation.storno, DatatypeConverter.parseBase64Binary("something"))
+    Invoices.Raw(Invoices.Operation.storno, DatatypeConverter.parseBase64Binary("something"))
 
   val validInvoices = (1 to 100).map(_ => invoice)
 
