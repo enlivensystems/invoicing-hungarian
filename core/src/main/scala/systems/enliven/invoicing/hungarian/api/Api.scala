@@ -11,7 +11,20 @@ import akka.util.ByteString
 import scalaxb.{Base64Binary, XMLFormat}
 import systems.enliven.invoicing.hungarian.core
 import systems.enliven.invoicing.hungarian.core.{Configuration, Logger}
-import systems.enliven.invoicing.hungarian.generated.{CREATE, GeneralErrorResponse, InvoiceOperationListType, InvoiceOperationType, MODIFY, ManageInvoiceRequest, ManageInvoiceResponse, ONLINE_SERVICE, STORNO, SoftwareType, TokenExchangeRequest, TokenExchangeResponse}
+import systems.enliven.invoicing.hungarian.generated.{
+  CREATE,
+  GeneralErrorResponse,
+  InvoiceOperationListType,
+  InvoiceOperationType,
+  MODIFY,
+  ManageInvoiceRequest,
+  ManageInvoiceResponse,
+  ONLINE_SERVICE,
+  STORNO,
+  SoftwareType,
+  TokenExchangeRequest,
+  TokenExchangeResponse
+}
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.reflect.ClassTag
@@ -21,9 +34,7 @@ class Api(signingKeyOverride: Option[String] = None)(
   implicit configuration: Configuration,
   actorSystem: ActorSystem,
   ec: ExecutionContextExecutor)
-  extends Logger {
-  private val apiData: Data = Data(signingKeyOverride)(configuration)
-  private[hungarian] val builder: RequestBuilder = new RequestBuilder(apiData)
+ extends Logger {
 
   private lazy val buildSoftware: SoftwareType =
     SoftwareType(
@@ -37,7 +48,41 @@ class Api(signingKeyOverride: Option[String] = None)(
       apiData.software.developer.taxNumber
     )
 
+  private val apiData: Data = Data(signingKeyOverride)(configuration)
+  private[hungarian] val builder: RequestBuilder = new RequestBuilder(apiData)
+
   def getExchangeKey: String = apiData.auth.exchangeKey
+
+  def manageInvoice(invoiceOperations: InvoiceOperationListType)(
+    implicit token: Token
+  ): Future[Try[ManageInvoiceResponse]] = {
+    val timestamp = Instant.now()
+    val requestID: String = builder.nextRequestID
+
+    val payload = ManageInvoiceRequest(
+      builder.buildBasicHeader(requestID, timestamp),
+      builder.buildUserHeader(requestID, timestamp, invoiceOperations)(
+        Hash.InvoiceOperationListHash
+      ),
+      buildSoftware,
+      token.value,
+      invoiceOperations
+    )
+
+    request("manageInvoice", Api.write[ManageInvoiceRequest](payload))
+      .map {
+        case (status: StatusCode, response: String) =>
+          Try {
+            status match {
+              case StatusCodes.OK =>
+                Api.parse[ManageInvoiceResponse](response)
+              case _ =>
+                val errorResponse = Api.parse[GeneralErrorResponse](Fixer.fixResponse(response))
+                throw new core.Exception(Api.format(errorResponse))
+            }
+          }
+      }
+  }
 
   private[hungarian] def tokenExchange(): Future[Try[TokenExchangeResponse]] = {
     val timestamp: Instant = Instant.now()
@@ -64,34 +109,6 @@ class Api(signingKeyOverride: Option[String] = None)(
       }
   }
 
-  def manageInvoice(invoiceOperations: InvoiceOperationListType)(
-    implicit token: Token): Future[Try[ManageInvoiceResponse]] = {
-    val timestamp = Instant.now()
-    val requestID: String = builder.nextRequestID
-
-    val payload = ManageInvoiceRequest(
-      builder.buildBasicHeader(requestID, timestamp),
-      builder.buildUserHeader(requestID, timestamp, invoiceOperations)(Hash.InvoiceOperationListHash),
-      buildSoftware,
-      token.value,
-      invoiceOperations
-    )
-
-    request("manageInvoice", Api.write[ManageInvoiceRequest](payload))
-        .map {
-          case (status: StatusCode, response: String) =>
-            Try {
-              status match {
-                case StatusCodes.OK =>
-                  Api.parse[ManageInvoiceResponse](response)
-                case _ =>
-                  val errorResponse = Api.parse[GeneralErrorResponse](Fixer.fixResponse(response))
-                  throw new core.Exception(Api.format(errorResponse))
-              }
-            }
-        }
-  }
-
   private def request(path: String, body: String): Future[(StatusCode, String)] = {
     val URI = apiData.request.base + path
 
@@ -114,18 +131,19 @@ class Api(signingKeyOverride: Option[String] = None)(
 }
 
 object Api {
-  private def parse[T](data: String)(implicit format: XMLFormat[T]): T =
-   scalaxb.fromXML[T](scala.xml.XML.loadString(data))
 
-  private def write[T : ClassTag](data: T)(implicit format: XMLFormat[T]): String = {
+  private def parse[T](data: String)(implicit format: XMLFormat[T]): T =
+    scalaxb.fromXML[T](scala.xml.XML.loadString(data))
+
+  private def write[T : ClassTag](data: T)(implicit format: XMLFormat[T]): String =
     """<?xml version="1.0" encoding="UTF-8"?>""" +
       scalaxb.toXML(
         data,
         implicitly[ClassTag[T]].runtimeClass.getSimpleName,
-        scalaxb.toScope(None -> "http://schemas.nav.gov.hu/OSA/2.0/api")).toString()
-  }
+        scalaxb.toScope(None -> "http://schemas.nav.gov.hu/OSA/2.0/api")
+      ).toString()
 
-  private def format(err: GeneralErrorResponse): String = {
+  private def format(err: GeneralErrorResponse): String =
     err.result.funcCode.toString +
       err.result.errorCode.map(errCode => " [" + errCode + "]").getOrElse("") +
       err.result.message.map(errMsg => " with message [" + errMsg + "]").getOrElse("") +
@@ -135,12 +153,14 @@ object Api {
             validationError.validationErrorCode.map(errCode => " [" + errCode + "]").getOrElse("") +
             validationError.message.map(errMsg => " with message [" + errMsg + "]").getOrElse("")
       }.mkString
-  }
 
   object Protocol {
+
     object Request {
+
       case class Invoices(invoices: Seq[Invoices.Invoice]) {
-        protected[hungarian] def toRequest: InvoiceOperationListType = {
+
+        protected[hungarian] def toRequest: InvoiceOperationListType =
           InvoiceOperationListType(
             compressedContent = false,
             invoices.zipWithIndex.map {
@@ -159,15 +179,21 @@ object Api {
                 )
             }
           )
-        }
+
       }
+
       object Invoices {
+
+        case class Invoice(operation: Operation.Value, data: Array[Byte])
+
         case object Operation extends Enumeration {
           val create, modify, storno = Value
         }
-        case class Invoice(operation: Operation.Value, data: Array[Byte])
+
       }
+
     }
+
   }
 
 }

@@ -15,79 +15,66 @@ import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 
 object Connection {
+
+  def apply(configuration: Configuration): Behavior[Protocol.Command] = {
+    val stashCapacity: Int = configuration.get[Int]("invoicing-hungarian.connection.stash")
+
+    Behaviors.setup[Protocol.Message] {
+      context =>
+        Behaviors.withStash(stashCapacity) {
+          buffer =>
+            Behaviors.withTimers {
+              timers => new Connection(configuration, timers, buffer, context).initState
+            }
+        }
+    }.narrow
+  }
+
   object Protocol {
     sealed trait Message
     sealed trait Command extends Message
     sealed trait PrivateCommand extends Message
 
-    final case class ManageInvoice(replyTo: ActorRef[Try[ManageInvoiceResponse]], invoices: Invoices) extends Command
+    final case class ManageInvoice(
+      replyTo: ActorRef[Try[ManageInvoiceResponse]],
+      invoices: Invoices)
+     extends Command
 
-    final case class WrappedManageInvoice(replyTo: ActorRef[Try[ManageInvoiceResponse]], invoices: Invoices) extends PrivateCommand
+    final case class WrappedManageInvoice(
+      replyTo: ActorRef[Try[ManageInvoiceResponse]],
+      invoices: Invoices)
+     extends PrivateCommand
+
     final case object PreloadToken extends PrivateCommand
   }
 
   final private case object TimerKey
 
-  def apply(configuration: Configuration): Behavior[Protocol.Command] = {
-    val stashCapacity: Int = configuration.get[Int]("invoicing-hungarian.connection.stash")
-
-    Behaviors.setup[Protocol.Message] { context =>
-      Behaviors.withStash(stashCapacity) { buffer =>
-        Behaviors.withTimers { timers =>
-          new Connection(configuration, timers, buffer, context).initState
-        }
-      }
-    }.narrow
-  }
 }
 
-class Connection private(configuration: Configuration,
-                         timers: TimerScheduler[Protocol.Message],
-                         buffer: StashBuffer[Protocol.Message],
-                         context: ActorContext[Protocol.Message]) extends Logger {
+class Connection private (
+  configuration: Configuration,
+  timers: TimerScheduler[Protocol.Message],
+  buffer: StashBuffer[Protocol.Message],
+  context: ActorContext[Protocol.Message])
+ extends Logger {
 
   private val maxRetry: Int = configuration.get[Int]("invoicing-hungarian.connection.maxRetry")
 
   implicit private val executionContext: ExecutionContextExecutor =
-    context.system.dispatchers.lookup(DispatcherSelector.fromConfig("akka.actor.blocking-dispatcher"))
+    context.system.dispatchers.lookup(
+      DispatcherSelector.fromConfig("akka.actor.blocking-dispatcher")
+    )
 
   implicit private val scheduler: Scheduler =
     context.system.classicSystem.scheduler
-
-  private def manageInvoice(replyTo: ActorRef[Try[ManageInvoiceResponse]],
-                            invoices: Invoices)(implicit token: Token): Unit =
-    api.manageInvoice(invoices.toRequest).onComplete {
-      case Success(value) =>
-        log.debug("Manage invoice finished.")
-        replyTo ! value
-      case Failure(exception) =>
-        log.error("Could not manage invoice due to [{}] with message [{}].",
-          exception.getClass.getName,
-          exception.getMessage)
-    }
-
-  private def refreshToken(onSuccess: TokenExchangeResponse => Unit): Unit = {
-    retry(() => api.tokenExchange(), maxRetry, attempted => Option(200.milliseconds * attempted)).onComplete {
-      case Success(result) =>
-        result match {
-          case Success(response) =>
-            onSuccess(response)
-          case Failure(exception) =>
-            log.error("Could not refresh exchange token due to [{}].", exception.getMessage)
-        }
-      case Failure(throwable: Throwable) => // Network error
-        log.error("Could not refresh exchange token due to [{}] with message [{}].",
-          throwable.getClass.getSimpleName,
-          throwable.getMessage)
-    }
-  }
 
   private val api =
     new Api()(configuration, context.system.classicSystem, context.executionContext)
 
   /**
-   * According to the API documentation "single-use data reporting token"
-   */
+    * According to the API documentation "single-use data reporting token"
+    */
   private var tokens: Seq[Token] = Seq.empty
   private var preloadedToken: Option[Token] = None
 
@@ -125,11 +112,54 @@ class Connection private(configuration: Configuration,
           response: TokenExchangeResponse =>
             preloadedToken = Some(new Token(response, api.getExchangeKey))
             log.debug("Token Preloaded")
-            timers.startSingleTimer(Connection.TimerKey, Protocol.PreloadToken, 4.minutes + 30.seconds)
+            timers.startSingleTimer(
+              Connection.TimerKey,
+              Protocol.PreloadToken,
+              4.minutes + 30.seconds
+            )
         }
         Behaviors.same
       case _ =>
         Behaviors.unhandled
     }
   }
+
+  private def manageInvoice(
+    replyTo: ActorRef[Try[ManageInvoiceResponse]],
+    invoices: Invoices
+  )(implicit token: Token): Unit =
+    api.manageInvoice(invoices.toRequest).onComplete {
+      case Success(value) =>
+        log.debug("Manage invoice finished.")
+        replyTo ! value
+      case Failure(exception) =>
+        log.error(
+          "Could not manage invoice due to [{}] with message [{}].",
+          exception.getClass.getName,
+          exception.getMessage
+        )
+    }
+
+  private def refreshToken(onSuccess: TokenExchangeResponse => Unit): Unit = {
+    retry(
+      () => api.tokenExchange(),
+      maxRetry,
+      attempted => Option(200.milliseconds * attempted)
+    ).onComplete {
+      case Success(result) =>
+        result match {
+          case Success(response) =>
+            onSuccess(response)
+          case Failure(exception) =>
+            log.error("Could not refresh exchange token due to [{}].", exception.getMessage)
+        }
+      case Failure(throwable: Throwable) => // Network error
+        log.error(
+          "Could not refresh exchange token due to [{}] with message [{}].",
+          throwable.getClass.getSimpleName,
+          throwable.getMessage
+        )
+    }
+  }
+
 }

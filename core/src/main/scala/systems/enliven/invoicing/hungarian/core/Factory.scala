@@ -5,10 +5,16 @@ abstract class Factory[E] {
 }
 
 object Factory {
+
   abstract class forConfiguration[T] extends Serializable {
-    def apply(fromFile: String,
-              fromEnvironment: Boolean = true,
-              restrictTo: Option[String] = None,
-              silent: Boolean = false): T
+
+    def apply(
+      fromFile: String,
+      fromEnvironment: Boolean = true,
+      restrictTo: Option[String] = None,
+      silent: Boolean = false
+    ): T
+
   }
+
 }

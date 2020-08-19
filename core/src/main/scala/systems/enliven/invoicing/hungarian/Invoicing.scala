@@ -13,20 +13,17 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success, Try}
 
-class Invoicing()(implicit configuration: Configuration)
-extends Logger {
+class Invoicing()(implicit configuration: Configuration) extends Logger {
+
   implicit val typedSystem: ActorSystem[Guardian.Protocol.Command] =
-    ActorSystem.create[Guardian.Protocol.Command](Guardian.apply(), "guardian", ConfigFactory.load("actor.conf"))
+    ActorSystem.create[Guardian.Protocol.Command](
+      Guardian.apply(),
+      "guardian",
+      ConfigFactory.load("actor.conf")
+    )
 
   private var connection: Option[ActorRef[Connection.Protocol.Command]] = None
 
-  private def connect(): Future[Guardian.Protocol.ConnectionPool] =
-    retry.Backoff(10, 1.seconds).apply {
-      implicit val askTimeout: Timeout = 30.seconds
-      typedSystem.ask[Guardian.Protocol.ConnectionPool](replyTo => Guardian.Protocol.GetConnectionPool(replyTo))
-    }(retry.Success.always, executionContext)
-
-  def executionContext: ExecutionContextExecutor = typedSystem.executionContext
   def classicSystem: akka.actor.ActorSystem = typedSystem.classicSystem
 
   def init(): Unit = {
@@ -37,6 +34,15 @@ extends Logger {
         log.error("Could not refresh exchange token due to [{}]", exception.getMessage)
     }(executionContext)
   }
+
+  private def connect(): Future[Guardian.Protocol.ConnectionPool] =
+    retry.Backoff(10, 1.seconds).apply {
+      implicit val askTimeout: Timeout = 30.seconds
+      typedSystem.ask[Guardian.Protocol.ConnectionPool](replyTo =>
+        Guardian.Protocol.GetConnectionPool(replyTo))
+    }(retry.Success.always, executionContext)
+
+  def executionContext: ExecutionContextExecutor = typedSystem.executionContext
 
   def isReady: Boolean = connection.isDefined
 
@@ -51,9 +57,17 @@ extends Logger {
     connection = Some(Await.result(connect(), Duration.Inf).pool)
   }
 
-  def invoices(invoices: Invoices, timeout: FiniteDuration)(implicit askTimeout: Timeout): Try[ManageInvoiceResponse] =
-    Await.result(connection.get.ask[Try[ManageInvoiceResponse]](replyTo => Connection.Protocol.ManageInvoice(replyTo, invoices)), timeout)
+  def invoices(invoices: Invoices, timeout: FiniteDuration)(implicit
+  askTimeout: Timeout): Try[ManageInvoiceResponse] =
+    Await.result(
+      connection.get.ask[Try[ManageInvoiceResponse]](replyTo =>
+        Connection.Protocol.ManageInvoice(replyTo, invoices)),
+      timeout
+    )
 
-  def invoices(invoices: Invoices)(implicit askTimeout: Timeout): Future[Try[ManageInvoiceResponse]] =
-    connection.get.ask[Try[ManageInvoiceResponse]](replyTo => Connection.Protocol.ManageInvoice(replyTo, invoices))
+  def invoices(invoices: Invoices)(implicit
+  askTimeout: Timeout): Future[Try[ManageInvoiceResponse]] =
+    connection.get.ask[Try[ManageInvoiceResponse]](replyTo =>
+      Connection.Protocol.ManageInvoice(replyTo, invoices))
+
 }

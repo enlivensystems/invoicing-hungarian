@@ -6,10 +6,10 @@ import com.typesafe.config.Config
 import systems.enliven.invoicing.hungarian.behaviour.Connection.Protocol
 
 class PriorityMailbox(settings: Settings, config: Config)
-  extends UnboundedStablePriorityMailbox(
-    PriorityGenerator {
-      case Protocol.WrappedManageInvoice(_, _) => 0
-      case Protocol.ManageInvoice(_, _) => 1
-      case _ => 2
-    }
-  )
+ extends UnboundedStablePriorityMailbox(
+   PriorityGenerator {
+     case Protocol.WrappedManageInvoice(_, _) => 0
+     case Protocol.ManageInvoice(_, _)        => 1
+     case _                                   => 2
+   }
+ )

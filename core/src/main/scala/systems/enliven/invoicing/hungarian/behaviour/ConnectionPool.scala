@@ -5,6 +5,7 @@ import akka.actor.typed.{MailboxSelector, SupervisorStrategy}
 import systems.enliven.invoicing.hungarian.core.Configuration
 
 object ConnectionPool {
+
   def apply(configuration: Configuration): PoolRouter[Connection.Protocol.Command] = {
     val poolSize: Int = configuration.get[Int]("invoicing-hungarian.connection.pool")
 
@@ -14,4 +15,5 @@ object ConnectionPool {
         .onFailure[scala.Exception](SupervisorStrategy.restart)
     }.withRouteeProps(MailboxSelector.fromConfig("akka.actor.priority-dispatcher"))
   }
+
 }
