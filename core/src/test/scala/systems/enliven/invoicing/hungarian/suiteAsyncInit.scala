@@ -2,9 +2,7 @@ package systems.enliven.invoicing.hungarian
 
 import org.scalatest.BeforeAndAfterAll
 
-class suiteAsyncInit
-  extends baseSuite
-    with BeforeAndAfterAll {
+class suiteAsyncInit extends baseSuite with BeforeAndAfterAll {
 
   private val invoicing: Invoicing = new Invoicing()
 
@@ -15,7 +13,7 @@ class suiteAsyncInit
   describe("The asynchronously initialization of the API") {
     it("should work") {
       invoicing.init()
-      eventually(invoicing.isReady should be (true))
+      eventually(invoicing.isReady should be(true))
     }
   }
 }

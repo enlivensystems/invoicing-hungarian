@@ -21,11 +21,13 @@ class suiteError extends invoicingSuite {
       response match {
         case Success(_) => fail
         case Failure(exception) =>
-          log.error("Failed with [{}] with message [{}]",
+          log.error(
+            "Failed with [{}] with message [{}]",
             exception.getClass.getName,
-            exception.getMessage)
-          exception.getMessage.contains("INVALID_REQUEST") should be (true)
-          exception.getMessage.contains("SCHEMA_VIOLATION") should be (true)
+            exception.getMessage
+          )
+          exception.getMessage.contains("INVALID_REQUEST") should be(true)
+          exception.getMessage.contains("SCHEMA_VIOLATION") should be(true)
       }
     }
 
@@ -35,14 +37,16 @@ class suiteError extends invoicingSuite {
       response match {
         case Success(response) =>
           log.info(response.toString)
-          response.result.errorCode should be (None)
-          response.result.message should be (None)
+          response.result.errorCode should be(None)
+          response.result.message should be(None)
         case Failure(exception) =>
-          log.error("Failed with [{}] with message [{}]",
+          log.error(
+            "Failed with [{}] with message [{}]",
             exception.getClass.getName,
-            exception.getMessage)
+            exception.getMessage
+          )
           fail
-        }
+      }
     }
 
     it("should not be able to manage 101 invoices,") {
@@ -51,11 +55,13 @@ class suiteError extends invoicingSuite {
       response match {
         case Success(_) => fail
         case Failure(exception) =>
-          log.error("Failed with [{}] with message [{}]",
+          log.error(
+            "Failed with [{}] with message [{}]",
             exception.getClass.getName,
-            exception.getMessage)
-          exception.getMessage.contains("INVALID_REQUEST") should be (true)
-          exception.getMessage.contains("SCHEMA_VIOLATION") should be (true)
+            exception.getMessage
+          )
+          exception.getMessage.contains("INVALID_REQUEST") should be(true)
+          exception.getMessage.contains("SCHEMA_VIOLATION") should be(true)
       }
     }
   }

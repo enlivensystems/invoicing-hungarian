@@ -5,7 +5,19 @@ import java.nio.file.{FileSystems, Files, Paths}
 import java.util.Collections
 
 import scalaxb.XMLFormat
-import systems.enliven.invoicing.hungarian.generated.{InvoiceData, ManageAnnulmentRequest, ManageInvoiceRequest, QueryInvoiceChainDigestRequest, QueryInvoiceCheckRequest, QueryInvoiceDataRequest, QueryInvoiceDigestRequest, QueryTaxpayerRequest, QueryTransactionListRequest, QueryTransactionStatusRequest, TokenExchangeRequest}
+import systems.enliven.invoicing.hungarian.generated.{
+  InvoiceData,
+  ManageAnnulmentRequest,
+  ManageInvoiceRequest,
+  QueryInvoiceChainDigestRequest,
+  QueryInvoiceCheckRequest,
+  QueryInvoiceDataRequest,
+  QueryInvoiceDigestRequest,
+  QueryTaxpayerRequest,
+  QueryTransactionListRequest,
+  QueryTransactionStatusRequest,
+  TokenExchangeRequest
+}
 
 import scala.collection.JavaConverters._
 import scala.io.Source
@@ -36,7 +48,7 @@ class suiteSerialization extends baseSuite {
       "queryTaxpayer.xml" -> parser[QueryTaxpayerRequest],
       "queryTransactionList.xml" -> parser[QueryTransactionListRequest],
       "queryTransactionStatus.xml" -> parser[QueryTransactionStatusRequest],
-      "tokenExchange.xml" -> parser[TokenExchangeRequest],
+      "tokenExchange.xml" -> parser[TokenExchangeRequest]
     ).foreach {
       case (testResource, parser) =>
         it(s"should be able to parse [$testResource],") {
@@ -80,4 +92,5 @@ class suiteSerialization extends baseSuite {
         .toList
     }
   }
+
 }

@@ -6,32 +6,27 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Seconds, Span}
 import systems.enliven.invoicing.hungarian.core.{Configuration, Logger}
 
-class baseSuite
-  extends AnyFunSpec
-    with Matchers
-    with Logger {
+class baseSuite extends AnyFunSpec with Matchers with Logger {
 
   implicit protected val configuration: Configuration = new Configuration()
 
-  def eventually[U](f: => U)(implicit timeout: Span = Span(60, Seconds)): U = {
-    Eventually.eventually(Eventually.timeout(timeout),
-      Eventually.interval(Span(2, Seconds))) {
+  def eventually[U](f: => U)(implicit timeout: Span = Span(60, Seconds)): U =
+    Eventually.eventually(Eventually.timeout(timeout), Eventually.interval(Span(2, Seconds))) {
       logException(f)
     }
-  }
 
-  def eventually[U](timeout: Span, interval: Span)(f: => U): U = {
-    Eventually.eventually(Eventually.timeout(timeout),
-      Eventually.interval(interval)) {
+  protected def logException[U](f: => U): U =
+    try {
+      f
+    } catch {
+      case t: Throwable =>
+        log.error(s"Eventually not satisfied due to [${t.getMessage}] of [${t.getClass.getName}]!")
+        throw t
+    }
+
+  def eventually[U](timeout: Span, interval: Span)(f: => U): U =
+    Eventually.eventually(Eventually.timeout(timeout), Eventually.interval(interval)) {
       logException(f)
     }
-  }
 
-  protected def logException[U](f: => U): U = try {
-    f
-  } catch {
-    case t: Throwable =>
-      log.error(s"Eventually not satisfied due to [${t.getMessage}] of [${t.getClass.getName}]!")
-      throw t
-  }
 }
