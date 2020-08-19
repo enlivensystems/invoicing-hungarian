@@ -81,7 +81,6 @@ class suiteRequests extends invoicingSuite {
 
   describe("The request API") {
     it("should be able to make a call to manage-invoice,") {
-      Thread.sleep(2000)
       eventually {
         val response = invoicing.invoices(invoices, 10.seconds)(10.seconds)
 
@@ -101,7 +100,6 @@ class suiteRequests extends invoicingSuite {
     }
 
     it("should be able to handle many manage-invoice calls,") {
-      Thread.sleep(2000)
       val testCount: Int = 100
       var completed: Int = 0
       (1 to testCount)

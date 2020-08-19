@@ -75,6 +75,36 @@ class Api(signingKeyOverride: Option[String] = None)(
 
   def getExchangeKey: String = apiData.auth.exchangeKey
 
+  def queryTransactionStatus(
+    transactionID: String,
+    returnOriginalRequest: Boolean = false
+  ): Future[Try[QueryTransactionStatusResponse]] = {
+    val timestamp = Instant.now()
+    val requestID: String = builder.nextRequestID
+
+    val payload = QueryTransactionStatusRequest(
+      builder.buildBasicHeader(requestID, timestamp),
+      builder.buildUserHeader(requestID, timestamp),
+      buildSoftware,
+      transactionID,
+      Some(returnOriginalRequest)
+    )
+
+    request("queryTransactionStatus", Api.write[QueryTransactionStatusRequest](payload))
+      .map {
+        case (status: StatusCode, response: String) =>
+          Try {
+            status match {
+              case StatusCodes.OK =>
+                Api.parse[QueryTransactionStatusResponse](response)
+              case _ =>
+                val errorResponse = Api.parse[GeneralErrorResponse](Fixer.fixResponse(response))
+                throw new core.Exception(Api.format(errorResponse))
+            }
+          }
+      }
+  }
+
   def manageInvoice(invoiceOperations: InvoiceOperationListType)(
     implicit token: Token
   ): Future[Try[ManageInvoiceResponse]] = {
