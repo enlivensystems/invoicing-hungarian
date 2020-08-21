@@ -13,7 +13,7 @@ resolvers ++= Seq("Enliven Systems Central" at "https://central.enliven.systems/
 Add as a dependency:
 
 ```
-"systems.enliven.invoicing.hungarian" %% "core" % "0.2.0"
+"systems.enliven.invoicing.hungarian" %% "core" % "0.3.0"
 ```
 
 Don't let the low version number fool you. See Test section for more details.
@@ -40,7 +40,7 @@ Each build is released with 43+ tests succeeds on our CI. Running tests with a p
 you should see:
 
 ```
-[info] Tests: succeeded 43, failed 0, canceled 0, ignored 0, pending 0
+[info] Tests: succeeded 46, failed 0, canceled 0, ignored 0, pending 0
 ```
 
 ## Usage & features
@@ -126,10 +126,14 @@ Create a few invoices.
 
 ```
 val invoice: Invoices.Invoice =
-	Invoices.Invoice(Invoices.Operation.storno, DatatypeConverter.parseBase64Binary("something"))
+	Invoices.Raw(Invoices.Operation.storno, DatatypeConverter.parseBase64Binary("something"))
 
 val validInvoices = (1 to 100).map(_ => invoice)
 ```
+
+Alternatively you can use other type of invoices, for example directly provide the protocol object
+as in `Invoices.Protocol` or use a limited, but self-validating class `Invoices.Smart`. See tests
+and code for examples.
 
 Use the synchronous API,
 
@@ -178,7 +182,7 @@ Provide your own logging by adding a `log4j.properties` to your classpath, for e
 
 ```
 # Root logger option.
-log4j.rootLogger=DEBUG, stdout
+log4j.rootLogger=INFO, stdout
 
 # Direct log messages to STDOUT.
 log4j.appender.stdout=org.apache.log4j.ConsoleAppender

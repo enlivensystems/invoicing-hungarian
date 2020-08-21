@@ -7,7 +7,10 @@ import com.typesafe.config.ConfigFactory
 import systems.enliven.invoicing.hungarian.api.Api.Protocol.Request.Invoices
 import systems.enliven.invoicing.hungarian.behaviour.{Connection, Guardian}
 import systems.enliven.invoicing.hungarian.core.{Configuration, Logger}
-import systems.enliven.invoicing.hungarian.generated.ManageInvoiceResponse
+import systems.enliven.invoicing.hungarian.generated.{
+  ManageInvoiceResponse,
+  QueryTransactionStatusResponse
+}
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
@@ -69,5 +72,35 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
   askTimeout: Timeout): Future[Try[ManageInvoiceResponse]] =
     connection.get.ask[Try[ManageInvoiceResponse]](replyTo =>
       Connection.Protocol.ManageInvoice(replyTo, invoices))
+
+  def status(
+    transactionID: String,
+    timeout: FiniteDuration
+  )(implicit askTimeout: Timeout): Try[QueryTransactionStatusResponse] =
+    status(transactionID, returnOriginalRequest = false, timeout)(askTimeout)
+
+  def status(
+    transactionID: String,
+    returnOriginalRequest: Boolean = false,
+    timeout: FiniteDuration
+  )(implicit askTimeout: Timeout): Try[QueryTransactionStatusResponse] =
+    Await.result(
+      connection.get.ask[Try[QueryTransactionStatusResponse]](replyTo =>
+        Connection.Protocol.QueryTransactionStatus(replyTo, transactionID, returnOriginalRequest)),
+      timeout
+    )
+
+  def status(transactionID: String)(implicit
+  askTimeout: Timeout): Future[Try[QueryTransactionStatusResponse]] =
+    status(transactionID, returnOriginalRequest = false)(askTimeout)
+
+  def status(transactionID: String, returnOriginalRequest: Boolean)(implicit
+  askTimeout: Timeout): Future[Try[QueryTransactionStatusResponse]] =
+    connection.get.ask[Try[QueryTransactionStatusResponse]](replyTo =>
+      Connection.Protocol.QueryTransactionStatus(
+        replyTo,
+        transactionID,
+        returnOriginalRequest
+      ))
 
 }

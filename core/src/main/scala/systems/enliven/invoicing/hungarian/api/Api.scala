@@ -1,8 +1,9 @@
 package systems.enliven.invoicing.hungarian.api
 
 import java.nio.charset.Charset
+import java.text.SimpleDateFormat
 import java.time.Instant
-import java.util.GregorianCalendar
+import java.util.{Date, TimeZone}
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
@@ -90,7 +91,7 @@ class Api(signingKeyOverride: Option[String] = None)(
       Some(returnOriginalRequest)
     )
 
-    request("queryTransactionStatus", Api.write[QueryTransactionStatusRequest](payload))
+    request("queryTransactionStatus", Api.writeRequest[QueryTransactionStatusRequest](payload))
       .map {
         case (status: StatusCode, response: String) =>
           Try {
@@ -121,7 +122,7 @@ class Api(signingKeyOverride: Option[String] = None)(
       invoiceOperations
     )
 
-    request("manageInvoice", Api.write[ManageInvoiceRequest](payload))
+    request("manageInvoice", Api.writeRequest[ManageInvoiceRequest](payload))
       .map {
         case (status: StatusCode, response: String) =>
           Try {
@@ -146,7 +147,7 @@ class Api(signingKeyOverride: Option[String] = None)(
       buildSoftware
     )
 
-    request("tokenExchange", Api.write[TokenExchangeRequest](payload))
+    request("tokenExchange", Api.writeRequest[TokenExchangeRequest](payload))
       .map {
         case (status: StatusCode, response: String) =>
           Try {
@@ -162,6 +163,8 @@ class Api(signingKeyOverride: Option[String] = None)(
   }
 
   private def request(path: String, body: String): Future[(StatusCode, String)] = {
+    log.trace("Initiating request to [{}] with body [{}].", path, body)
+
     val URI = apiData.request.base + path
 
     val contentType = ContentType(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`)
@@ -182,12 +185,24 @@ class Api(signingKeyOverride: Option[String] = None)(
 
 }
 
-object Api extends XMLProtocol {
+object Api extends XMLProtocol with Logger {
 
   private def parse[T](data: String)(implicit format: XMLFormat[T]): T =
     scalaxb.fromXML[T](scala.xml.XML.loadString(data))
 
-  private def write[T : ClassTag](data: T)(implicit format: XMLFormat[T]): String =
+  private def writeData[T : ClassTag](
+    data: T
+  )(implicit format: XMLFormat[T]): String =
+    """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>""" +
+      scalaxb.toXML(
+        data,
+        implicitly[ClassTag[T]].runtimeClass.getSimpleName.stripSuffix("Type"),
+        scalaxb.toScope(None -> "http://schemas.nav.gov.hu/OSA/2.0/data")
+      ).toString()
+
+  private def writeRequest[T : ClassTag](
+    data: T
+  )(implicit format: XMLFormat[T]): String =
     """<?xml version="1.0" encoding="UTF-8"?>""" +
       scalaxb.toXML(
         data,
@@ -246,7 +261,7 @@ object Api extends XMLProtocol {
           operation: Operation.Value,
           data: InvoiceDataType)
          extends Invoice {
-          override def base64 = Base64Binary(Api.write(data))
+          override def base64 = Base64Binary(Api.writeRequest(data))
         }
 
         case class Raw(
@@ -259,9 +274,9 @@ object Api extends XMLProtocol {
         case class Smart(
           number: String,
           reference: Option[Reference],
-          issued: GregorianCalendar,
-          delivered: GregorianCalendar,
-          paid: GregorianCalendar,
+          issued: Date,
+          delivered: Date,
+          paid: Date,
           currencyCode: String,
           exchangeRate: Double,
           periodical: Boolean,
@@ -274,160 +289,212 @@ object Api extends XMLProtocol {
 
           override def base64: Base64Binary = {
             val invoice = this
-            Base64Binary(Api.write[InvoiceDataType](InvoiceDataType(
-              invoice.number,
-              DatatypeFactory.newInstance.newXMLGregorianCalendar(
-                invoice.issued
-              ),
-              InvoiceMainType(
-                Seq(
-                  DataRecord[InvoiceType](
-                    namespace = None,
-                    key = Some(InvoiceType.getClass.getSimpleName),
-                    value = InvoiceType(
-                      invoice.reference.map(
-                        r => InvoiceReferenceType(r.number, r.reported, r.index)
-                      ),
-                      invoiceHead = InvoiceHeadType(
-                        supplierInfo = SupplierInfoType(
-                          TaxNumberType(
-                            invoice.issuer.taxNumber,
-                            Some(invoice.issuer.taxCode),
-                            Some(invoice.issuer.taxCountry)
-                          ),
-                          None,
-                          Some(invoice.issuer.communityTaxNumber),
-                          invoice.issuer.name,
-                          AddressType(
-                            DataRecord[DetailedAddressType](
-                              namespace = None,
-                              key = Some(DetailedAddressType.getClass.getSimpleName),
-                              value = DetailedAddressType(
-                                invoice.issuer.address.countryCode,
-                                invoice.issuer.address.region,
-                                invoice.issuer.address.postalCode,
-                                invoice.issuer.address.city,
-                                invoice.issuer.address.streetName,
-                                invoice.issuer.address.publicPlaceCategory,
-                                invoice.issuer.address.number,
-                                invoice.issuer.address.building,
-                                invoice.issuer.address.staircase,
-                                invoice.issuer.address.floor,
-                                invoice.issuer.address.door,
-                                invoice.issuer.address.identifier
-                              )
-                            )
-                          ),
-                          Some(invoice.issuer.bankAccountNumber),
-                          Some(false),
-                          None
+            val simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd")
+            simpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"))
+            val invoiceData = Api.writeData[InvoiceDataType](
+              InvoiceDataType(
+                invoice.number,
+                DatatypeFactory.newInstance.newXMLGregorianCalendar(
+                  simpleDateFormat.format(invoice.issued)
+                ),
+                InvoiceMainType(
+                  Seq(
+                    DataRecord[InvoiceType](
+                      namespace = None,
+                      key = Some("invoice"),
+                      value = InvoiceType(
+                        invoice.reference.map(
+                          r => InvoiceReferenceType(r.number, r.reported, r.index)
                         ),
-                        customerInfo = Option(CustomerInfoType(
-                          customerTaxNumber = invoice.recipient.taxNumber.map {
-                            taxNumber =>
-                              TaxNumberType(
-                                taxNumber,
-                                None,
-                                None
+                        invoiceHead = InvoiceHeadType(
+                          supplierInfo = SupplierInfoType(
+                            TaxNumberType(
+                              invoice.issuer.taxNumber,
+                              Some(invoice.issuer.taxCode),
+                              Some(invoice.issuer.taxCountry)
+                            ),
+                            None,
+                            Some(invoice.issuer.communityTaxNumber),
+                            invoice.issuer.name,
+                            AddressType(
+                              DataRecord[DetailedAddressType](
+                                namespace = None,
+                                key =
+                                  Some("detailedAddress"),
+                                value = DetailedAddressType(
+                                  invoice.issuer.address.countryCode,
+                                  invoice.issuer.address.region,
+                                  invoice.issuer.address.postalCode,
+                                  invoice.issuer.address.city,
+                                  invoice.issuer.address.streetName,
+                                  invoice.issuer.address.publicPlaceCategory,
+                                  invoice.issuer.address.number,
+                                  invoice.issuer.address.building,
+                                  invoice.issuer.address.staircase,
+                                  invoice.issuer.address.floor,
+                                  invoice.issuer.address.door,
+                                  invoice.issuer.address.identifier
+                                )
                               )
-                          },
-                          groupMemberTaxNumber = None,
-                          communityVatNumber = invoice.recipient.communityTaxNumber,
-                          thirdStateTaxId = invoice.recipient.thirdStateTaxNumber,
-                          customerName = invoice.recipient.name,
-                          customerAddress = AddressType(
-                            DataRecord[DetailedAddressType](
-                              namespace = None,
-                              key = Some(DetailedAddressType.getClass.getSimpleName),
-                              value = DetailedAddressType(
-                                invoice.recipient.address.countryCode,
-                                invoice.recipient.address.region,
-                                invoice.recipient.address.postalCode,
-                                invoice.recipient.address.city,
-                                invoice.recipient.address.streetName,
-                                invoice.recipient.address.publicPlaceCategory,
-                                invoice.recipient.address.number,
-                                invoice.recipient.address.building,
-                                invoice.recipient.address.staircase,
-                                invoice.recipient.address.floor,
-                                invoice.recipient.address.door,
-                                invoice.recipient.address.identifier
+                            ),
+                            Some(invoice.issuer.bankAccountNumber),
+                            Some(false),
+                            None
+                          ),
+                          customerInfo = Option(CustomerInfoType(
+                            customerTaxNumber = invoice.recipient.taxNumber.map {
+                              taxNumber =>
+                                TaxNumberType(
+                                  taxNumber,
+                                  None,
+                                  None
+                                )
+                            },
+                            groupMemberTaxNumber = None,
+                            communityVatNumber = invoice.recipient.communityTaxNumber,
+                            thirdStateTaxId = invoice.recipient.thirdStateTaxNumber,
+                            customerName = invoice.recipient.name,
+                            customerAddress = AddressType(
+                              DataRecord[DetailedAddressType](
+                                namespace = None,
+                                key =
+                                  Some("detailedAddress"),
+                                value = DetailedAddressType(
+                                  invoice.recipient.address.countryCode,
+                                  invoice.recipient.address.region,
+                                  invoice.recipient.address.postalCode,
+                                  invoice.recipient.address.city,
+                                  invoice.recipient.address.streetName,
+                                  invoice.recipient.address.publicPlaceCategory,
+                                  invoice.recipient.address.number,
+                                  invoice.recipient.address.building,
+                                  invoice.recipient.address.staircase,
+                                  invoice.recipient.address.floor,
+                                  invoice.recipient.address.door,
+                                  invoice.recipient.address.identifier
+                                )
                               )
-                            )
-                          ),
-                          customerBankAccountNumber = None
-                        )),
-                        None,
-                        InvoiceDetailType(
-                          invoiceCategory = NORMAL,
-                          invoiceDeliveryDate = DatatypeFactory.newInstance.newXMLGregorianCalendar(
-                            invoice.delivered
-                          ),
-                          invoiceDeliveryPeriodStart = None,
-                          invoiceDeliveryPeriodEnd = None,
-                          invoiceAccountingDeliveryDate = None,
-                          periodicalSettlement = Some(invoice.periodical),
-                          smallBusinessIndicator = None,
-                          currencyCode = invoice.currencyCode,
-                          exchangeRate = BigDecimal(invoice.exchangeRate),
-                          selfBillingIndicator = None,
-                          paymentMethod = Some(CARD),
-                          paymentDate = Some(DatatypeFactory.newInstance.newXMLGregorianCalendar(
-                            invoice.paid
+                            ),
+                            customerBankAccountNumber = None
                           )),
-                          cashAccountingIndicator = None,
-                          invoiceAppearance = ELECTRONICValue,
-                          electronicInvoiceHash = None,
-                          additionalInvoiceData = Seq.empty
-                        )
-                      ),
-                      invoiceLines = Some {
-                        var i = 0
-                        LinesType(invoice.items.map {
-                          item =>
-                            i = i + 1
-                            LineType(
-                              lineNumber = BigInt(i),
-                              lineModificationReference = None,
-                              referencesToOtherLines = None,
-                              advanceIndicator = None,
-                              productCodes = None,
-                              lineExpressionIndicator = false,
-                              lineNatureIndicator = Some(SERVICE),
-                              lineDescription = Some(item.name),
-                              quantity = Some(BigDecimal(item.quantity)),
-                              unitOfMeasure = Some(PIECE),
-                              unitOfMeasureOwn = None,
-                              unitPrice = Some(BigDecimal(item.price)),
-                              unitPriceHUF = None,
-                              lineDiscountData = None,
-                              linetypeoption = None,
-                              intermediatedService = Some(item.intermediated),
-                              aggregateInvoiceLineData = None,
-                              newTransportMean = None,
-                              depositIndicator = Some(false),
-                              marginSchemeIndicator = None,
-                              ekaerIds = None,
-                              obligatedForProductFee = None,
-                              GPCExcise = None,
-                              dieselOilPurchase = None,
-                              netaDeclaration = None,
-                              productFeeClause = None,
-                              lineProductFeeContent = Seq.empty,
-                              additionalLineData = Seq.empty
+                          None,
+                          InvoiceDetailType(
+                            invoiceCategory = NORMAL,
+                            invoiceDeliveryDate =
+                              DatatypeFactory.newInstance.newXMLGregorianCalendar(
+                                simpleDateFormat.format(invoice.delivered)
+                              ),
+                            invoiceDeliveryPeriodStart = None,
+                            invoiceDeliveryPeriodEnd = None,
+                            invoiceAccountingDeliveryDate = None,
+                            periodicalSettlement = Some(invoice.periodical),
+                            smallBusinessIndicator = None,
+                            currencyCode = invoice.currencyCode,
+                            exchangeRate = BigDecimal(invoice.exchangeRate),
+                            selfBillingIndicator = None,
+                            paymentMethod = Some(CARD),
+                            paymentDate = Some(DatatypeFactory.newInstance.newXMLGregorianCalendar(
+                              simpleDateFormat.format(invoice.paid)
+                            )),
+                            cashAccountingIndicator = None,
+                            invoiceAppearance = ELECTRONICValue,
+                            electronicInvoiceHash = None,
+                            additionalInvoiceData = Seq.empty
+                          )
+                        ),
+                        invoiceLines = Some {
+                          var i = 0
+                          LinesType(invoice.items.map {
+                            item =>
+                              i = i + 1
+                              LineType(
+                                lineNumber = BigInt(i),
+                                lineModificationReference = None,
+                                referencesToOtherLines = None,
+                                advanceIndicator = None,
+                                productCodes = None,
+                                lineExpressionIndicator = false,
+                                lineNatureIndicator = Some(SERVICE),
+                                lineDescription = Some(item.name),
+                                quantity = Some(BigDecimal(item.quantity)),
+                                unitOfMeasure = Some(PIECE),
+                                unitOfMeasureOwn = None,
+                                unitPrice = Some(BigDecimal(item.price)),
+                                unitPriceHUF = None,
+                                lineDiscountData = None,
+                                linetypeoption = None,
+                                intermediatedService = Some(item.intermediated),
+                                aggregateInvoiceLineData = None,
+                                newTransportMean = None,
+                                depositIndicator = Some(false),
+                                marginSchemeIndicator = None,
+                                ekaerIds = None,
+                                obligatedForProductFee = None,
+                                GPCExcise = None,
+                                dieselOilPurchase = None,
+                                netaDeclaration = None,
+                                productFeeClause = None,
+                                lineProductFeeContent = Seq.empty,
+                                additionalLineData = Seq.empty
+                              )
+                          })
+                        },
+                        productFeeSummary = Seq.empty,
+                        invoiceSummary = SummaryType(
+                          Seq(DataRecord[SummaryNormalType](
+                            namespace = None,
+                            key = Some("summaryNormal"),
+                            SummaryNormalType(
+                              invoice.items.groupBy(_.tax).map {
+                                case (rate, items) =>
+                                  val netInCurrency =
+                                    items.map(item => item.price * item.quantity).sum
+                                  val netInHUF = items.map(
+                                    item => item.price * item.quantity
+                                  ).sum * invoice.exchangeRate
+                                  val taxInCurrency =
+                                    items.map(item => item.price * item.quantity * item.tax).sum
+                                  val taxInHUF = items.map(
+                                    item => item.price * item.quantity * item.tax
+                                  ).sum * invoice.exchangeRate
+                                  SummaryByVatRateType(
+                                    VatRateType(
+                                      DataRecord[BigDecimal](
+                                        namespace = None,
+                                        key = Some("vatPercentage"),
+                                        BigDecimal(rate)
+                                      )
+                                    ),
+                                    VatRateNetDataType(
+                                      BigDecimal(netInCurrency),
+                                      BigDecimal(netInHUF)
+                                    ),
+                                    VatRateVatDataType(
+                                      BigDecimal(taxInCurrency),
+                                      BigDecimal(taxInHUF)
+                                    ),
+                                    Some(VatRateGrossDataType(
+                                      BigDecimal(netInCurrency + taxInCurrency),
+                                      BigDecimal(netInHUF + taxInHUF)
+                                    ))
+                                  )
+                              }.toSeq,
+                              BigDecimal(1.0),
+                              BigDecimal(1.0),
+                              BigDecimal(1.0),
+                              BigDecimal(1.0)
                             )
-                        })
-                      },
-                      productFeeSummary = Seq.empty,
-                      invoiceSummary = SummaryType(
-                        Seq.empty,
-                        None
+                          )),
+                          None
+                        )
                       )
                     )
                   )
                 )
               )
-            )))
+            )
+            log.trace("Invoice XML data before base-64 is [{}].", invoiceData)
+            new Base64Binary(invoiceData.getBytes("UTF-8").toVector)
           }
 
         }
@@ -439,7 +506,15 @@ object Api extends XMLProtocol {
           thirdStateTaxNumber: Option[String] = None,
           name: String,
           address: Address,
-          bankAccountNumber: String)
+          bankAccountNumber: String) {
+          require(taxNumber.forall(_.matches("""[0-9]{8}""")))
+          require(taxCountry.forall(_.matches("""[0-9]{2}""")))
+          require(communityTaxNumber.forall(_.matches("""[A-Z]{2}[0-9A-Z]{2,13}""")))
+          require(name.nonEmpty)
+          require(bankAccountNumber.matches(
+            """[0-9]{8}[-][0-9]{8}[-][0-9]{8}|[0-9]{8}[-][0-9]{8}|[A-Z]{2}[0-9]{2}[0-9A-Za-z]{11,30}"""
+          ))
+        }
 
         case class Address(
           countryCode: String,
@@ -453,21 +528,31 @@ object Api extends XMLProtocol {
           staircase: Option[String] = None,
           floor: Option[String] = None,
           door: Option[String] = None,
-          identifier: Option[String] = None)
+          identifier: Option[String] = None) {
+          require(countryCode.matches("""[A-Z]{2}"""))
+          require(postalCode.matches("""[A-Z0-9][A-Z0-9\s\-]{1,8}[A-Z0-9]"""))
+        }
 
         case class Issuer(
           taxNumber: String,
           taxCode: String,
-          taxCountry: String = "HU",
+          taxCountry: String,
           communityTaxNumber: String,
           name: String,
           address: Address,
-          bankAccountNumber: String)
+          bankAccountNumber: String) {
+          require(taxCode.matches("""[1-5]"""))
+          require(taxCountry.matches("""[0-9]{2}"""))
+          require(communityTaxNumber.matches("""[A-Z]{2}[0-9A-Z]{2,13}"""))
+          require(name.nonEmpty)
+          require(bankAccountNumber.nonEmpty)
+        }
 
         case class Item(
           name: String,
           quantity: Int,
           price: Double,
+          tax: Double,
           intermediated: Boolean)
 
         case class Reference(number: String, reported: Boolean = true, index: Int = 1)
