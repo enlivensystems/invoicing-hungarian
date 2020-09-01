@@ -13,7 +13,7 @@ resolvers ++= Seq("Enliven Systems Central" at "https://central.enliven.systems/
 Add as a dependency:
 
 ```
-"systems.enliven.invoicing.hungarian" %% "core" % "0.3.0"
+"systems.enliven.invoicing.hungarian" %% "core" % "0.3.1"
 ```
 
 Don't let the low version number fool you. See Test section for more details.
@@ -36,7 +36,7 @@ some of them directly connect to NAV servers.
 sbt test
 ```
 
-Each build is released with 43+ tests succeeds on our CI. Running tests with a proper configuration
+Each build is released with 46+ tests succeeds on our CI. Running tests with a proper configuration
 you should see:
 
 ```

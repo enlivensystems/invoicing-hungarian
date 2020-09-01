@@ -4,7 +4,6 @@ import java.util.Date
 
 import javax.xml.bind.DatatypeConverter
 import org.apache.commons.lang3.RandomStringUtils
-import org.scalatest.time.{Seconds, Span}
 import systems.enliven.invoicing.hungarian.api.Api.Protocol.Request.Invoices
 import systems.enliven.invoicing.hungarian.api.Api.Protocol.Request.Invoices.{
   Address,
@@ -57,7 +56,7 @@ class suiteRequests extends invoicingSuite {
         streetName = "W",
         publicPlaceCategory = "W"
       ),
-      bankAccountNumber = "00000000-00000000-00000000"
+      bankAccountNumber = Some("00000000-00000000-00000000")
     ),
     operation = Invoices.Operation.create,
     items = Seq(

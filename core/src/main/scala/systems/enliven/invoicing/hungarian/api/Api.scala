@@ -375,7 +375,7 @@ object Api extends XMLProtocol with Logger {
                                 )
                               )
                             ),
-                            customerBankAccountNumber = None
+                            customerBankAccountNumber = recipient.bankAccountNumber
                           )),
                           None,
                           InvoiceDetailType(
@@ -506,14 +506,14 @@ object Api extends XMLProtocol with Logger {
           thirdStateTaxNumber: Option[String] = None,
           name: String,
           address: Address,
-          bankAccountNumber: String) {
+          bankAccountNumber: Option[String] = None) {
           require(taxNumber.forall(_.matches("""[0-9]{8}""")))
           require(taxCountry.forall(_.matches("""[0-9]{2}""")))
           require(communityTaxNumber.forall(_.matches("""[A-Z]{2}[0-9A-Z]{2,13}""")))
           require(name.nonEmpty)
-          require(bankAccountNumber.matches(
+          require(bankAccountNumber.forall(_.matches(
             """[0-9]{8}[-][0-9]{8}[-][0-9]{8}|[0-9]{8}[-][0-9]{8}|[A-Z]{2}[0-9]{2}[0-9A-Za-z]{11,30}"""
-          ))
+          )))
         }
 
         case class Address(
