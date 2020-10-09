@@ -13,7 +13,7 @@ resolvers ++= Seq("Enliven Systems Central" at "https://central.enliven.systems/
 Add as a dependency:
 
 ```
-"systems.enliven.invoicing.hungarian" %% "core" % "0.3.3"
+"systems.enliven.invoicing.hungarian" %% "core" % "0.3.4"
 ```
 
 Don't let the low version number fool you. See Test section for more details.
