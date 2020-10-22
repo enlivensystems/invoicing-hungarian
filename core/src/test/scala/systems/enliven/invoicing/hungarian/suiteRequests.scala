@@ -174,8 +174,8 @@ class suiteRequests extends invoicingSuite {
     it("should be able to handle many manage-invoice calls,") {
       val testCount: Int = 100
       var completed: Int = 0
-      (1 to testCount)
-        .map(_ => invoicing.invoices(invoices)(30.seconds))
+      (1 to testCount).par
+        .map(_ => invoicing.invoices(invoices)(40.seconds))
         .foreach(_.onComplete {
           case Success(_) =>
             completed = completed + 1
