@@ -1,15 +1,8 @@
 import Dependencies._
 import sbt.Keys.test
-import sbt.Tests.{Group, SubProcess}
-import sbtrelease.ReleaseStateTransformations.{
-  commitNextVersion,
-  commitReleaseVersion,
-  inquireVersions,
-  pushChanges,
-  setNextVersion,
-  setReleaseVersion
-}
+import sbtrelease.ReleaseStateTransformations._
 import sbtrelease.{versionFormatError, Version}
+import sbtrelease.ReleasePlugin.autoImport.{releaseProcess, releaseVersionBump}
 
 lazy val commonSettings = Seq(
   organizationName := "Enliven Systems Kft.",
