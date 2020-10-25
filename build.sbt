@@ -53,13 +53,8 @@ lazy val commonSettings = Seq(
   ),
   concurrentRestrictions in Global := Seq(Tags.limitAll(14)),
   parallelExecution in Test := true,
-  testGrouping in Test := (testGrouping in Test).value.flatMap {
-    group =>
-      group.tests.map(
-        test => Group(test.name, Seq(test), SubProcess(ForkOptions()))
-      )
-  },
-  concurrentRestrictions := Seq(Tags.limit(Tags.ForkedTestGroup, 14)),
+  fork := false,
+  fork in (IntegrationTest, test) := false,
   pomExtra :=
     <developers>
       <developer>
