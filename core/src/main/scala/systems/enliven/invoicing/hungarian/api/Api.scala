@@ -212,13 +212,21 @@ object Api extends XMLProtocol with Logger {
 
   private def format(err: GeneralErrorResponse): String =
     err.result.funcCode.toString +
-      err.result.errorCode.map(errCode => " [" + errCode + "]").getOrElse("") +
-      err.result.message.map(errMsg => " with message [" + errMsg + "]").getOrElse("") +
+      err.result.errorCode.map(
+        errCode => " [" + errCode + "]"
+      ).getOrElse("") +
+      err.result.message.map(
+        errMsg => " with message [" + errMsg + "]"
+      ).getOrElse("") +
       err.technicalValidationMessages.map {
         validationError =>
           " with validation error [" + validationError.validationResultCode.toString + "]" +
-            validationError.validationErrorCode.map(errCode => " [" + errCode + "]").getOrElse("") +
-            validationError.message.map(errMsg => " with message [" + errMsg + "]").getOrElse("")
+            validationError.validationErrorCode.map(
+              errCode => " [" + errCode + "]"
+            ).getOrElse("") +
+            validationError.message.map(
+              errMsg => " with message [" + errMsg + "]"
+            ).getOrElse("")
       }.mkString
 
   object Protocol {
@@ -419,7 +427,9 @@ object Api extends XMLProtocol with Logger {
                                 quantity = Some(BigDecimal(item.quantity)),
                                 unitOfMeasure = Some(PIECE),
                                 unitOfMeasureOwn = None,
-                                unitPrice = Some(BigDecimal(item.price)),
+                                unitPrice = Some(
+                                  item.price.setScale(2, BigDecimal.RoundingMode.HALF_UP)
+                                ),
                                 unitPriceHUF = None,
                                 lineDiscountData = None,
                                 linetypeoption = None,
@@ -448,34 +458,40 @@ object Api extends XMLProtocol with Logger {
                               invoice.items.groupBy(_.tax).map {
                                 case (rate, items) =>
                                   val netInCurrency =
-                                    items.map(item => item.price * item.quantity).sum
-                                  val netInHUF = items.map(
+                                    items.map(
+                                      item => item.price * item.quantity
+                                    ).sum.setScale(2, BigDecimal.RoundingMode.HALF_UP)
+                                  val netInHUF = (items.map(
                                     item => item.price * item.quantity
-                                  ).sum * invoice.exchangeRate
+                                  ).sum * invoice.exchangeRate)
+                                    .setScale(2, BigDecimal.RoundingMode.HALF_UP)
                                   val taxInCurrency =
-                                    items.map(item => item.price * item.quantity * item.tax).sum
-                                  val taxInHUF = items.map(
+                                    items.map(
+                                      item => item.price * item.quantity * item.tax
+                                    ).sum.setScale(2, BigDecimal.RoundingMode.HALF_UP)
+                                  val taxInHUF = (items.map(
                                     item => item.price * item.quantity * item.tax
-                                  ).sum * invoice.exchangeRate
+                                  ).sum * invoice.exchangeRate)
+                                    .setScale(2, BigDecimal.RoundingMode.HALF_UP)
                                   SummaryByVatRateType(
                                     VatRateType(
                                       DataRecord[BigDecimal](
                                         namespace = None,
                                         key = Some("vatPercentage"),
-                                        BigDecimal(rate)
+                                        rate.setScale(2, BigDecimal.RoundingMode.HALF_UP)
                                       )
                                     ),
                                     VatRateNetDataType(
-                                      BigDecimal(netInCurrency),
-                                      BigDecimal(netInHUF)
+                                      netInCurrency,
+                                      netInHUF
                                     ),
                                     VatRateVatDataType(
-                                      BigDecimal(taxInCurrency),
-                                      BigDecimal(taxInHUF)
+                                      taxInCurrency,
+                                      taxInHUF
                                     ),
                                     Some(VatRateGrossDataType(
-                                      BigDecimal(netInCurrency + taxInCurrency),
-                                      BigDecimal(netInHUF + taxInHUF)
+                                      netInCurrency + taxInCurrency,
+                                      netInHUF + taxInHUF
                                     ))
                                   )
                               }.toSeq,
@@ -551,8 +567,8 @@ object Api extends XMLProtocol with Logger {
         case class Item(
           name: String,
           quantity: Int,
-          price: Double,
-          tax: Double,
+          price: BigDecimal,
+          tax: BigDecimal,
           intermediated: Boolean)
 
         case class Reference(number: String, reported: Boolean = true, index: Int = 1)
