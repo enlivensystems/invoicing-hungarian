@@ -85,3 +85,10 @@ lazy val core =
     scalaxbDispatchVersion in (Compile, scalaxb) := "0.13.4",
     scalaxbPackageName in (Compile, scalaxb) := "systems.enliven.invoicing.hungarian.generated"
   )
+
+lazy val invoicing =
+  (project in file(".")).settings(commonSettings: _*).enablePlugins(ScalaxbPlugin).aggregate(
+    core
+  ).dependsOn(
+    core % "test->test;compile->compile"
+  )
