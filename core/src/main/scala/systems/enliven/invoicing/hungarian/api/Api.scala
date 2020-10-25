@@ -453,9 +453,8 @@ object Api extends XMLProtocol with Logger {
                         invoiceSummary = SummaryType(
                           Seq(DataRecord[SummaryNormalType](
                             namespace = None,
-                            key = Some("summaryNormal"),
-                            SummaryNormalType(
-                              invoice.items.groupBy(_.tax).map {
+                            key = Some("summaryNormal"), {
+                              val taxRateSummary = invoice.items.groupBy(_.tax).map {
                                 case (rate, items) =>
                                   val netInCurrency =
                                     items.map(
@@ -473,33 +472,39 @@ object Api extends XMLProtocol with Logger {
                                     item => item.price * item.quantity * item.tax
                                   ).sum * invoice.exchangeRate)
                                     .setScale(2, BigDecimal.RoundingMode.HALF_UP)
-                                  SummaryByVatRateType(
-                                    VatRateType(
-                                      DataRecord[BigDecimal](
-                                        namespace = None,
-                                        key = Some("vatPercentage"),
-                                        rate.setScale(2, BigDecimal.RoundingMode.HALF_UP)
-                                      )
-                                    ),
-                                    VatRateNetDataType(
-                                      netInCurrency,
-                                      netInHUF
-                                    ),
-                                    VatRateVatDataType(
-                                      taxInCurrency,
-                                      taxInHUF
-                                    ),
-                                    Some(VatRateGrossDataType(
-                                      netInCurrency + taxInCurrency,
-                                      netInHUF + taxInHUF
-                                    ))
-                                  )
-                              }.toSeq,
-                              BigDecimal(1.0),
-                              BigDecimal(1.0),
-                              BigDecimal(1.0),
-                              BigDecimal(1.0)
-                            )
+                                  rate -> (netInCurrency, netInHUF, taxInCurrency, taxInHUF)
+                              }
+                              SummaryNormalType(
+                                taxRateSummary.map {
+                                  case (rate, (netInCurrency, netInHUF, taxInCurrency, taxInHUF)) =>
+                                    SummaryByVatRateType(
+                                      VatRateType(
+                                        DataRecord[BigDecimal](
+                                          namespace = None,
+                                          key = Some("vatPercentage"),
+                                          rate.setScale(2, BigDecimal.RoundingMode.HALF_UP)
+                                        )
+                                      ),
+                                      VatRateNetDataType(
+                                        netInCurrency,
+                                        netInHUF
+                                      ),
+                                      VatRateVatDataType(
+                                        taxInCurrency,
+                                        taxInHUF
+                                      ),
+                                      Some(VatRateGrossDataType(
+                                        netInCurrency + taxInCurrency,
+                                        netInHUF + taxInHUF
+                                      ))
+                                    )
+                                }.toSeq,
+                                taxRateSummary.map(_._2._1).sum,
+                                taxRateSummary.map(_._2._2).sum,
+                                taxRateSummary.map(_._2._3).sum,
+                                taxRateSummary.map(_._2._4).sum
+                              )
+                            }
                           )),
                           None
                         )
