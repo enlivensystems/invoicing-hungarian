@@ -51,14 +51,6 @@ lazy val commonSettings = Seq(
     commitNextVersion,
     pushChanges
   ),
-  /** Required so that on Bamboo Agent environment, the tests can run code using the
-    * Scala interpreter. If disabled, you get an NPE somewhere in Scala, missing the
-    * compiler mirror.
-    */
-  fork := true,
-  fork in (IntegrationTest, test) := true,
-  Test / testForkedParallel := true,
-  IntegrationTest / testForkedParallel := true,
   concurrentRestrictions in Global := Seq(Tags.limitAll(14)),
   parallelExecution in Test := true,
   testGrouping in Test := (testGrouping in Test).value.flatMap {
