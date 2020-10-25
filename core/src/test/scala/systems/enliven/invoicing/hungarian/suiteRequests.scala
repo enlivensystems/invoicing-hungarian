@@ -29,7 +29,7 @@ class suiteRequests extends invoicingSuite {
     issuer = Issuer(
       taxNumber = "25962295",
       taxCode = "2",
-      taxCountry = "07",
+      taxCounty = "07",
       communityTaxNumber = "HU25962295",
       name = "W",
       address = Address(
@@ -175,7 +175,9 @@ class suiteRequests extends invoicingSuite {
       val testCount: Int = 100
       var completed: Int = 0
       (1 to testCount).par
-        .map(_ => invoicing.invoices(invoices)(40.seconds))
+        .map(
+          _ => invoicing.invoices(invoices)(40.seconds)
+        )
         .foreach(_.onComplete {
           case Success(_) =>
             completed = completed + 1

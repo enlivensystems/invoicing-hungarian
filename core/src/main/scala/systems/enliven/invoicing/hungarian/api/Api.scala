@@ -286,7 +286,7 @@ object Api extends XMLProtocol with Logger {
           delivered: Date,
           paid: Date,
           currencyCode: String,
-          exchangeRate: Double,
+          exchangeRate: BigDecimal,
           periodical: Boolean,
           issuer: Issuer,
           recipient: Recipient,
@@ -319,7 +319,7 @@ object Api extends XMLProtocol with Logger {
                             TaxNumberType(
                               invoice.issuer.taxNumber,
                               Some(invoice.issuer.taxCode),
-                              Some(invoice.issuer.taxCountry)
+                              Some(invoice.issuer.taxCounty)
                             ),
                             None,
                             Some(invoice.issuer.communityTaxNumber),
@@ -398,7 +398,7 @@ object Api extends XMLProtocol with Logger {
                             periodicalSettlement = Some(invoice.periodical),
                             smallBusinessIndicator = None,
                             currencyCode = invoice.currencyCode,
-                            exchangeRate = BigDecimal(invoice.exchangeRate),
+                            exchangeRate = invoice.exchangeRate,
                             selfBillingIndicator = None,
                             paymentMethod = Some(CARD),
                             paymentDate = Some(DatatypeFactory.newInstance.newXMLGregorianCalendar(
@@ -430,7 +430,10 @@ object Api extends XMLProtocol with Logger {
                                 unitPrice = Some(
                                   item.price.setScale(2, BigDecimal.RoundingMode.HALF_UP)
                                 ),
-                                unitPriceHUF = None,
+                                unitPriceHUF = Some(
+                                  (item.price * invoice.exchangeRate)
+                                    .setScale(2, BigDecimal.RoundingMode.HALF_UP)
+                                ),
                                 lineDiscountData = None,
                                 linetypeoption = None,
                                 intermediatedService = Some(item.intermediated),
@@ -557,13 +560,13 @@ object Api extends XMLProtocol with Logger {
         case class Issuer(
           taxNumber: String,
           taxCode: String,
-          taxCountry: String,
+          taxCounty: String,
           communityTaxNumber: String,
           name: String,
           address: Address,
           bankAccountNumber: String) {
           require(taxCode.matches("""[1-5]"""))
-          require(taxCountry.matches("""[0-9]{2}"""))
+          require(taxCounty.matches("""[0-9]{2}"""))
           require(communityTaxNumber.matches("""[A-Z]{2}[0-9A-Z]{2,13}"""))
           require(name.nonEmpty)
           require(bankAccountNumber.nonEmpty)
