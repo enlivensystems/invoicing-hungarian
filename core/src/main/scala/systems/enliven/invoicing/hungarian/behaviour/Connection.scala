@@ -7,7 +7,6 @@ import akka.pattern.retry
 import systems.enliven.invoicing.hungarian.api.Api.Protocol.Request.Invoices
 import systems.enliven.invoicing.hungarian.api.{Api, Token}
 import systems.enliven.invoicing.hungarian.behaviour.Connection.Protocol
-import systems.enliven.invoicing.hungarian.behaviour.Connection.Protocol.QueryTransactionStatus
 import systems.enliven.invoicing.hungarian.core.{Configuration, Logger}
 import systems.enliven.invoicing.hungarian.generated.{
   ManageInvoiceResponse,

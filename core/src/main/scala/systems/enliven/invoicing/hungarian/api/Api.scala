@@ -269,14 +269,14 @@ object Api extends XMLProtocol with Logger {
           operation: Operation.Value,
           data: InvoiceDataType)
          extends Invoice {
-          override def base64 = Base64Binary(Api.writeRequest(data))
+          override def base64: Base64Binary = Base64Binary(Api.writeRequest(data))
         }
 
         case class Raw(
           operation: Operation.Value,
           data: Array[Byte])
          extends Invoice {
-          override def base64 = new Base64Binary(data.toVector)
+          override def base64: Base64Binary = new Base64Binary(data.toVector)
         }
 
         case class Smart(

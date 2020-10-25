@@ -15,6 +15,7 @@ import scala.concurrent.duration.Duration
 import scala.language.reflectiveCalls
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
+import java.nio.file.Path
 
 /**
   * Abstract configuration that we enforce throughout the Hub and in our applications.
@@ -304,7 +305,7 @@ abstract class Configuration[
     }
   }
 
-  def saveToWorking() = {
+  def saveToWorking(): Path = {
     val path = java.lang.System.getProperty("user.dir") + File.separator + fromFile
     Files.write(
       Paths.get(path),
