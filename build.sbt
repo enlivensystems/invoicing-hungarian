@@ -37,7 +37,6 @@ lazy val commonSettings = Seq(
         .getOrElse(versionFormatError(ver))
   },
   releaseProcess := Seq[ReleaseStep](
-    inquireVersions,
     setReleaseVersion,
     commitReleaseVersion,
     setNextVersion,
