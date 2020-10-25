@@ -71,20 +71,6 @@ lazy val commonSettings = Seq(
         <name>Zoltán Zvara</name>
       </developer>
     </developers>,
-  semanticdbEnabled := true,
-  fork := true,
-  fork in (IntegrationTest, test) := true,
-  Test / testForkedParallel := true,
-  IntegrationTest / testForkedParallel := true,
-  concurrentRestrictions in Global := Seq(Tags.limitAll(14)),
-  parallelExecution in Test := true,
-  testGrouping in Test := (testGrouping in Test).value.flatMap {
-    group =>
-      group.tests.map(
-        test => Group(test.name, Seq(test), SubProcess(ForkOptions()))
-      )
-  },
-  concurrentRestrictions := Seq(Tags.limit(Tags.ForkedTestGroup, 14)),
   logLevel in test := Level.Debug,
   /** Do not pack sources in compile tasks.
     */
