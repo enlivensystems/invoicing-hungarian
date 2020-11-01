@@ -25,6 +25,6 @@ object Dependencies {
 
     "com.softwaremill.retry" %% "retry" % "0.3.3",
 
-    "org.bouncycastle" % "bcprov-jdk15on" % "1.66"
+    "org.bouncycastle" % "bcprov-jdk15on" % "1.67"
   )
 }
