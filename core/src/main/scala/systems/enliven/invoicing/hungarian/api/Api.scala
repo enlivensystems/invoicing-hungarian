@@ -20,7 +20,6 @@ import systems.enliven.invoicing.hungarian.generated.{
   CREATE,
   CustomerInfoType,
   DetailedAddressType,
-  ELECTRONICValue,
   GeneralErrorResponse,
   InvoiceDataType,
   InvoiceDetailType,
@@ -142,9 +141,9 @@ class Api(signingKeyOverride: Option[String] = None)(
     val requestID: String = builder.nextRequestID
 
     val payload = TokenExchangeRequest(
-      builder.buildBasicHeader(requestID, timestamp),
-      builder.buildUserHeader(requestID, timestamp),
-      buildSoftware
+      header = builder.buildBasicHeader(requestID, timestamp),
+      user = builder.buildUserHeader(requestID, timestamp),
+      software = buildSoftware
     )
 
     request("tokenExchange", Api.writeRequest[TokenExchangeRequest](payload))
@@ -193,12 +192,15 @@ object Api extends XMLProtocol with Logger {
   private def writeData[T : ClassTag](
     data: T
   )(implicit format: XMLFormat[T]): String =
-    """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>""" +
-      scalaxb.toXML(
-        data,
-        implicitly[ClassTag[T]].runtimeClass.getSimpleName.stripSuffix("Type"),
-        scalaxb.toScope(None -> "http://schemas.nav.gov.hu/OSA/2.0/data")
-      ).toString()
+    """<?xml version="1.0" encoding="UTF-8"?>""" + scalaxb.toXML(
+      data,
+      implicitly[ClassTag[T]].runtimeClass.getSimpleName.stripSuffix("Type"),
+      scalaxb.toScope(
+        None -> "http://schemas.nav.gov.hu/OSA/3.0/data",
+        Some("common") -> "http://schemas.nav.gov.hu/NTCA/1.0/common",
+        Some("base") -> "http://schemas.nav.gov.hu/OSA/3.0/base"
+      )
+    ).toString()
 
   private def writeRequest[T : ClassTag](
     data: T
@@ -207,7 +209,11 @@ object Api extends XMLProtocol with Logger {
       scalaxb.toXML(
         data,
         implicitly[ClassTag[T]].runtimeClass.getSimpleName,
-        scalaxb.toScope(None -> "http://schemas.nav.gov.hu/OSA/2.0/api")
+        scalaxb.toScope(
+          None -> "http://schemas.nav.gov.hu/OSA/3.0/api",
+          Some("common") -> "http://schemas.nav.gov.hu/NTCA/1.0/common",
+          Some("base") -> "http://schemas.nav.gov.hu/OSA/3.0/base"
+        )
       ).toString()
 
   private def format(err: GeneralErrorResponse): String =
@@ -305,6 +311,7 @@ object Api extends XMLProtocol with Logger {
                 DatatypeFactory.newInstance.newXMLGregorianCalendar(
                   simpleDateFormat.format(invoice.issued)
                 ),
+                completenessIndicator = false,
                 InvoiceMainType(
                   Seq(
                     DataRecord[InvoiceType](
@@ -326,9 +333,8 @@ object Api extends XMLProtocol with Logger {
                             invoice.issuer.name,
                             AddressType(
                               DataRecord[DetailedAddressType](
-                                namespace = None,
-                                key =
-                                  Some("detailedAddress"),
+                                namespace = Some("http://schemas.nav.gov.hu/OSA/3.0/base"),
+                                key = Some("detailedAddress"),
                                 value = DetailedAddressType(
                                   invoice.issuer.address.countryCode,
                                   invoice.issuer.address.region,
@@ -341,7 +347,7 @@ object Api extends XMLProtocol with Logger {
                                   invoice.issuer.address.staircase,
                                   invoice.issuer.address.floor,
                                   invoice.issuer.address.door,
-                                  invoice.issuer.address.identifier
+                                  invoice.issuer.address.lotNumber
                                 )
                               )
                             ),
@@ -349,44 +355,9 @@ object Api extends XMLProtocol with Logger {
                             Some(false),
                             None
                           ),
-                          customerInfo = Option(CustomerInfoType(
-                            customerTaxNumber = invoice.recipient.taxNumber.map {
-                              taxNumber =>
-                                TaxNumberType(
-                                  taxNumber,
-                                  None,
-                                  None
-                                )
-                            },
-                            groupMemberTaxNumber = None,
-                            communityVatNumber = invoice.recipient.communityTaxNumber,
-                            thirdStateTaxId = invoice.recipient.thirdStateTaxNumber,
-                            customerName = invoice.recipient.name,
-                            customerAddress = AddressType(
-                              DataRecord[DetailedAddressType](
-                                namespace = None,
-                                key =
-                                  Some("detailedAddress"),
-                                value = DetailedAddressType(
-                                  invoice.recipient.address.countryCode,
-                                  invoice.recipient.address.region,
-                                  invoice.recipient.address.postalCode,
-                                  invoice.recipient.address.city,
-                                  invoice.recipient.address.streetName,
-                                  invoice.recipient.address.publicPlaceCategory,
-                                  invoice.recipient.address.number,
-                                  invoice.recipient.address.building,
-                                  invoice.recipient.address.staircase,
-                                  invoice.recipient.address.floor,
-                                  invoice.recipient.address.door,
-                                  invoice.recipient.address.identifier
-                                )
-                              )
-                            ),
-                            customerBankAccountNumber = recipient.bankAccountNumber
-                          )),
-                          None,
-                          InvoiceDetailType(
+                          customerInfo = Some(recipient.toCustomerInfoType),
+                          fiscalRepresentativeInfo = None,
+                          invoiceDetail = InvoiceDetailType(
                             invoiceCategory = NORMAL,
                             invoiceDeliveryDate =
                               DatatypeFactory.newInstance.newXMLGregorianCalendar(
@@ -405,52 +376,54 @@ object Api extends XMLProtocol with Logger {
                               simpleDateFormat.format(invoice.paid)
                             )),
                             cashAccountingIndicator = None,
-                            invoiceAppearance = ELECTRONICValue,
-                            electronicInvoiceHash = None,
+                            invoiceAppearance = ELECTRONIC,
+                            conventionalInvoiceInfo = None,
                             additionalInvoiceData = Seq.empty
                           )
                         ),
                         invoiceLines = Some {
                           var i = 0
-                          LinesType(invoice.items.map {
-                            item =>
-                              i = i + 1
-                              LineType(
-                                lineNumber = BigInt(i),
-                                lineModificationReference = None,
-                                referencesToOtherLines = None,
-                                advanceIndicator = None,
-                                productCodes = None,
-                                lineExpressionIndicator = false,
-                                lineNatureIndicator = Some(SERVICE),
-                                lineDescription = Some(item.name),
-                                quantity = Some(BigDecimal(item.quantity)),
-                                unitOfMeasure = Some(PIECE),
-                                unitOfMeasureOwn = None,
-                                unitPrice = Some(
-                                  item.price.setScale(2, BigDecimal.RoundingMode.HALF_UP)
-                                ),
-                                unitPriceHUF = Some(
-                                  (item.price * invoice.exchangeRate)
-                                    .setScale(2, BigDecimal.RoundingMode.HALF_UP)
-                                ),
-                                lineDiscountData = None,
-                                linetypeoption = None,
-                                intermediatedService = Some(item.intermediated),
-                                aggregateInvoiceLineData = None,
-                                newTransportMean = None,
-                                depositIndicator = Some(false),
-                                marginSchemeIndicator = None,
-                                ekaerIds = None,
-                                obligatedForProductFee = None,
-                                GPCExcise = None,
-                                dieselOilPurchase = None,
-                                netaDeclaration = None,
-                                productFeeClause = None,
-                                lineProductFeeContent = Seq.empty,
-                                additionalLineData = Seq.empty
-                              )
-                          })
+                          LinesType(
+                            mergedItemIndicator = false,
+                            invoice.items.map {
+                              item =>
+                                i = i + 1
+                                LineType(
+                                  lineNumber = BigInt(i),
+                                  lineModificationReference = None,
+                                  referencesToOtherLines = None,
+                                  advanceData = None,
+                                  productCodes = None,
+                                  lineExpressionIndicator = false,
+                                  lineNatureIndicator = Some(SERVICE),
+                                  lineDescription = Some(item.name),
+                                  quantity = Some(BigDecimal(item.quantity)),
+                                  unitOfMeasure = Some(PIECE),
+                                  unitOfMeasureOwn = None,
+                                  unitPrice = Some(
+                                    item.price.setScale(2, BigDecimal.RoundingMode.HALF_UP)
+                                  ),
+                                  unitPriceHUF = Some(
+                                    (item.price * invoice.exchangeRate)
+                                      .setScale(2, BigDecimal.RoundingMode.HALF_UP)
+                                  ),
+                                  lineDiscountData = None,
+                                  linetypeoption = None,
+                                  intermediatedService = Some(item.intermediated),
+                                  aggregateInvoiceLineData = None,
+                                  newTransportMean = None,
+                                  depositIndicator = Some(false),
+                                  marginSchemeIndicator = None,
+                                  obligatedForProductFee = None,
+                                  GPCExcise = None,
+                                  dieselOilPurchase = None,
+                                  netaDeclaration = None,
+                                  productFeeClause = None,
+                                  lineProductFeeContent = Seq.empty,
+                                  additionalLineData = Seq.empty
+                                )
+                            }
+                          )
                         },
                         productFeeSummary = Seq.empty,
                         invoiceSummary = SummaryType(
@@ -523,21 +496,93 @@ object Api extends XMLProtocol with Logger {
 
         }
 
-        case class Recipient(
-          taxNumber: Option[String] = None,
-          taxCountry: Option[String] = None,
-          communityTaxNumber: Option[String] = None,
-          thirdStateTaxNumber: Option[String] = None,
+        trait Recipient {
+          def toCustomerInfoType: CustomerInfoType
+        }
+
+        case class PrivatePerson(bankAccountNumber: Option[String]) extends Recipient {
+          require(bankAccountNumber.forall(_.matches(
+            """[0-9]{8}[-][0-9]{8}[-][0-9]{8}|[0-9]{8}[-][0-9]{8}|[A-Z]{2}[0-9]{2}[0-9A-Za-z]{11,30}"""
+          )))
+
+          /** Ha a privatePersonIndicator magánszemély jelölő értéke true, akkor a vevői adatok közül az alábbi csomópontok nem
+            * lehetnek kitöltve:
+            * - customerVatData
+            * - customerName
+            * - customerAddress
+            */
+          override def toCustomerInfoType: CustomerInfoType =
+            CustomerInfoType(
+              privatePersonIndicator = true,
+              customerVatData = None,
+              customerName = None,
+              customerAddress = None,
+              customerBankAccountNumber = bankAccountNumber
+            )
+
+        }
+
+        // nem csoportos áfaalany
+        case class Company(
+          taxNumber: String,
+          vatCode: Option[String],
+          taxCounty: Option[String],
           name: String,
           address: Address,
-          bankAccountNumber: Option[String] = None) {
-          require(taxNumber.forall(_.matches("""[0-9]{8}""")))
-          require(taxCountry.forall(_.matches("""[0-9]{2}""")))
-          require(communityTaxNumber.forall(_.matches("""[A-Z]{2}[0-9A-Z]{2,13}""")))
+          bankAccountNumber: Option[String])
+         extends Recipient {
+          require(taxNumber.matches("""[0-9]{8}"""))
+          require(vatCode.forall(_.matches("""[1-5]{1}""")))
+          require(taxCounty.forall(_.matches("""[0-9]{2}""")))
           require(name.nonEmpty)
           require(bankAccountNumber.forall(_.matches(
             """[0-9]{8}[-][0-9]{8}[-][0-9]{8}|[0-9]{8}[-][0-9]{8}|[A-Z]{2}[0-9]{2}[0-9A-Za-z]{11,30}"""
           )))
+
+          /** Ha a privatePersonIndicator magánszemély jelölő értéke false, akkor a vevői adatok közül az alábbi csomópontok
+            * kitöltése kötelező:
+            * - customerName
+            * - customerAddress
+            */
+          override def toCustomerInfoType: CustomerInfoType =
+            CustomerInfoType(
+              privatePersonIndicator = false,
+              customerVatData = Some(CustomerVatDataType(
+                DataRecord[CustomerTaxNumberType](
+                  None,
+                  Some("customerTaxNumber"),
+                  CustomerTaxNumberType(
+                    taxpayerId = taxNumber,
+                    vatCode = vatCode,
+                    countyCode = taxCounty,
+                    groupMemberTaxNumber = None
+                  )
+                )
+              )),
+              customerName = Some(name),
+              customerAddress = Some(AddressType(
+                DataRecord[DetailedAddressType](
+                  namespace = Some("http://schemas.nav.gov.hu/OSA/3.0/base"),
+                  key = Some("detailedAddress"),
+                  value = DetailedAddressType(
+                    countryCode = address.countryCode,
+                    region = address.region,
+                    postalCode = address.postalCode,
+                    city = address.city,
+                    streetName = address.streetName,
+                    publicPlaceCategory = address.publicPlaceCategory,
+                    number = address.number,
+                    building = address.building,
+                    staircase = address.staircase,
+                    floor = address.floor,
+                    door = address.door,
+                    lotNumber = address.lotNumber
+                  )
+                )
+              )),
+              customerBankAccountNumber = bankAccountNumber
+            )
+
         }
 
         case class Address(
@@ -552,7 +597,7 @@ object Api extends XMLProtocol with Logger {
           staircase: Option[String] = None,
           floor: Option[String] = None,
           door: Option[String] = None,
-          identifier: Option[String] = None) {
+          lotNumber: Option[String] = None) {
           require(countryCode.matches("""[A-Z]{2}"""))
           require(postalCode.matches("""[A-Z0-9][A-Z0-9\s\-]{1,8}[A-Z0-9]"""))
         }
