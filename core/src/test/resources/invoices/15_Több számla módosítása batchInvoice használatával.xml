@@ -87,7 +87,7 @@
 			<batchIndex>2</batchIndex>
 			<invoice>
 				<invoiceReference>
-					<originalInvoiceNumber>SZ00001</originalInvoiceNumber>
+					<originalInvoiceNumber>SZ00002</originalInvoiceNumber>
 					<modifyWithoutMaster>false</modifyWithoutMaster>
 					<modificationIndex>1</modificationIndex>
 				</invoiceReference>
@@ -167,7 +167,7 @@
 			<batchIndex>3</batchIndex>
 			<invoice>
 				<invoiceReference>
-					<originalInvoiceNumber>SZ00001</originalInvoiceNumber>
+					<originalInvoiceNumber>SZ00003</originalInvoiceNumber>
 					<modifyWithoutMaster>false</modifyWithoutMaster>
 					<modificationIndex>1</modificationIndex>
 				</invoiceReference>
