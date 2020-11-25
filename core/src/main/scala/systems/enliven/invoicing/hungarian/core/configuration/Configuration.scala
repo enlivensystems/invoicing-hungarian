@@ -17,8 +17,7 @@ import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 import java.nio.file.Path
 
-/**
-  * Abstract configuration that we enforce throughout the Hub and in our applications.
+/** Abstract configuration that we enforce throughout the Hub and in our applications.
   *
   * Any specialized configuration extending this should have a default constructor and should
   * define a default value for each class parameter.
@@ -102,26 +101,30 @@ abstract class Configuration[
   }
 
   def logState(): Unit = {
-    val maxLength = if (configuration.entrySet().asScala.nonEmpty) {
-      configuration.entrySet().asScala.maxBy(_.getKey.length).getKey.length
-    } else {
-      0
-    }
+    val maxLength =
+      if (configuration.entrySet().asScala.nonEmpty) {
+        configuration.entrySet().asScala.maxBy(_.getKey.length).getKey.length
+      } else {
+        0
+      }
     log.info {
       configuration.entrySet().asScala.map {
         pair =>
           val lowercaseKey = pair.getKey.toLowerCase
           val maybeRedactedValue = logRedactedKeywords.find {
             keyword => lowercaseKey.contains(keyword)
-          }.map(_ => "#redacted#").getOrElse(pair.getValue.render(ConfigRenderOptions.concise()))
-          s"  ${pair.getKey}${(0 to maxLength - pair.getKey.length).map(_ => " ").mkString("")} " +
+          }.map(
+            _ => "#redacted#"
+          ).getOrElse(pair.getValue.render(ConfigRenderOptions.concise()))
+          s"  ${pair.getKey}${(0 to maxLength - pair.getKey.length).map(
+            _ => " "
+          ).mkString("")} " +
             s"[$maybeRedactedValue]"
       }.mkString("Parameters are\n", ",\n", ".")
     }
   }
 
-  /**
-    * Reloads the configuration from the working directory.
+  /** Reloads the configuration from the working directory.
     *
     * A file with the same name will be searched for in the application's current working directory.
     * It will validate the configuration with the pre-loaded reference.
@@ -133,8 +136,7 @@ abstract class Configuration[
     reloadFromFile(path)
   }
 
-  /**
-    * Reloads the configuration from the given file.
+  /** Reloads the configuration from the given file.
     *
     * It will validate the configuration with the pre-loaded reference.
     *
@@ -147,8 +149,7 @@ abstract class Configuration[
     }
   }
 
-  /**
-    * Sets the underlying (typesafe) configuration. It will also validate the configuration
+  /** Sets the underlying (typesafe) configuration. It will also validate the configuration
     * with the same reference that has been loaded when this configuration has been created.
     *
     * This is package protected to avoid users mess with the underlying model of this configuration,
@@ -194,14 +195,12 @@ abstract class Configuration[
       case _: Missing => None
     }
 
-  /**
-    * Gets a specific `key` from the domain of this configuration.
+  /** Gets a specific `key` from the domain of this configuration.
     */
   def getFromDomain[T : TypeTag](key: String): T =
     get[T](restrictTo.map(_ + ".").getOrElse("") + key)
 
-  /**
-    * Gets all the key-values from this configuration as a string-string map.
+  /** Gets all the key-values from this configuration as a string-string map.
     */
   def getAll: Map[String, String] =
     configuration.entrySet().asScala.toList.map(
@@ -210,8 +209,7 @@ abstract class Configuration[
       case (k, v) => k -> v.unwrapped().toString
     }
 
-  /**
-    * Gets the list of objects under this `key` as a map of string-string pairs.
+  /** Gets the list of objects under this `key` as a map of string-string pairs.
     *
     * @throws Throwable If anything goes wrong, probably if `key` is not an object list.
     */
@@ -235,8 +233,7 @@ abstract class Configuration[
         None
     }
 
-  /**
-    * Gets the configuration as the type specifies.
+  /** Gets the configuration as the type specifies.
     *
     * Unsupported types will return with `AnyRef` casted to the specified type.
     * Be aware.
@@ -276,8 +273,7 @@ abstract class Configuration[
       case t: WrongType => log.warn(s"Configuration [$key] is of wrong type!"); throw t
     }
 
-  /**
-    * Sets a key to the supplied value in this configuration.
+  /** Sets a key to the supplied value in this configuration.
     *
     * @throws core.Exception If the specified key is restricted by this configuration.
     */
@@ -318,8 +314,7 @@ abstract class Configuration[
 
   def underlyingConfiguration: Config = configuration
 
-  /**
-    * Extends the default configuration with the resource configuration's values.
+  /** Extends the default configuration with the resource configuration's values.
     */
   private def mergeConfigurations(): Config = {
     var conf = _defaults
