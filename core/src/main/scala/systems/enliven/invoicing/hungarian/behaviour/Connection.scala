@@ -190,7 +190,11 @@ class Connection private (
           case Success(response) =>
             onSuccess(response)
           case Failure(exception) =>
-            log.error("Could not refresh exchange token due to [{}]!", exception.getMessage)
+            log.error(
+              "Could not refresh exchange token due to [{}] with message [{}]!",
+              exception.getClass.getSimpleName,
+              exception.getMessage
+            )
         }
       case Failure(throwable: Throwable) => // Network error
         log.error(
