@@ -55,8 +55,8 @@ abstract class Configuration[
     "token"
   )
 
-  val instanceNumber = Configuration.nInstances.updateInstanceCount(className)
   protected val className = implicitly[ClassTag[Specialized]].runtimeClass.getName
+  val instanceNumber = Configuration.nInstances.updateInstanceCount(className)
 
   @transient private val _parseOptions = ConfigParseOptions.defaults()
     .setAllowMissing(false)
