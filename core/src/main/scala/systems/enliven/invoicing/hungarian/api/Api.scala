@@ -415,6 +415,24 @@ object Api extends XMLProtocol with Logger {
                           LinesType(invoice.items.map {
                             item =>
                               i = i + 1
+                              val unitPrice: BigDecimal =
+                                item.price.setScale(2, BigDecimal.RoundingMode.HALF_UP)
+                              val unitPriceHUF: BigDecimal = (unitPrice * invoice.exchangeRate)
+                                .setScale(2, BigDecimal.RoundingMode.HALF_UP)
+
+                              val lineNetAmount: BigDecimal = unitPrice * item.quantity
+                              val lineNetAmountHUF: BigDecimal = unitPriceHUF * item.quantity
+
+                              val lineVatAmount: BigDecimal = (lineNetAmount * item.tax).setScale(
+                                2,
+                                BigDecimal.RoundingMode.HALF_UP
+                              )
+                              val lineVatAmountHUF: BigDecimal =
+                                (lineNetAmountHUF * item.tax).setScale(
+                                  2,
+                                  BigDecimal.RoundingMode.HALF_UP
+                                )
+
                               LineType(
                                 lineNumber = BigInt(i),
                                 lineModificationReference = None,
@@ -427,15 +445,39 @@ object Api extends XMLProtocol with Logger {
                                 quantity = Some(BigDecimal(item.quantity)),
                                 unitOfMeasure = Some(PIECE),
                                 unitOfMeasureOwn = None,
-                                unitPrice = Some(
-                                  item.price.setScale(2, BigDecimal.RoundingMode.HALF_UP)
-                                ),
-                                unitPriceHUF = Some(
-                                  (item.price * invoice.exchangeRate)
-                                    .setScale(2, BigDecimal.RoundingMode.HALF_UP)
-                                ),
+                                unitPrice = Some(unitPrice),
+                                unitPriceHUF = Some(unitPriceHUF),
                                 lineDiscountData = None,
-                                linetypeoption = None,
+                                linetypeoption = Some(
+                                  DataRecord[LineAmountsNormalType](
+                                    namespace = None,
+                                    key = Some("lineAmountsNormal"),
+                                    value = LineAmountsNormalType(
+                                      lineNetAmountData = LineNetAmountDataType(
+                                        lineNetAmount = lineNetAmount,
+                                        lineNetAmountHUF = lineNetAmountHUF
+                                      ),
+                                      lineVatRate = VatRateType(
+                                        DataRecord[BigDecimal](
+                                          namespace = None,
+                                          key = Some("vatPercentage"),
+                                          item.tax.setScale(2, BigDecimal.RoundingMode.HALF_UP)
+                                        )
+                                      ),
+                                      lineVatData = Some(LineVatDataType(
+                                        lineVatAmount = lineVatAmount,
+                                        lineVatAmountHUF = lineVatAmountHUF
+                                      )),
+                                      lineGrossAmountData = Some(
+                                        LineGrossAmountDataType(
+                                          lineGrossAmountNormal = lineNetAmount + lineVatAmount,
+                                          lineGrossAmountNormalHUF =
+                                            lineNetAmountHUF + lineVatAmountHUF
+                                        )
+                                      )
+                                    )
+                                  )
+                                ),
                                 intermediatedService = Some(item.intermediated),
                                 aggregateInvoiceLineData = None,
                                 newTransportMean = None,
