@@ -1,69 +1,72 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<InvoiceData xmlns="http://schemas.nav.gov.hu/OSA/2.0/data" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.nav.gov.hu/OSA/2.0/data invoiceData.xsd">
-	<invoiceNumber>ZZZ000003</invoiceNumber>
-	<invoiceIssueDate>2020-05-20</invoiceIssueDate>
+<InvoiceData xmlns="http://schemas.nav.gov.hu/OSA/3.0/data" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.nav.gov.hu/OSA/3.0/data invoiceData.xsd" xmlns:common="http://schemas.nav.gov.hu/NTCA/1.0/common" xmlns:base="http://schemas.nav.gov.hu/OSA/3.0/base">
+	<invoiceNumber>ZZZ000002</invoiceNumber>
+	<invoiceIssueDate>2021-05-20</invoiceIssueDate>
+	<completenessIndicator>false</completenessIndicator>
 	<invoiceMain>
 		<invoice>
 			<invoiceReference>
 				<originalInvoiceNumber>ZZZ000001</originalInvoiceNumber>
 				<modifyWithoutMaster>false</modifyWithoutMaster>
-				<modificationIndex>2</modificationIndex>
+				<modificationIndex>1</modificationIndex>
 			</invoiceReference>
 			<invoiceHead>
 				<supplierInfo>
 					<supplierTaxNumber>
-						<taxpayerId>11111111</taxpayerId>
-						<vatCode>2</vatCode>
-						<countyCode>42</countyCode>
+						<base:taxpayerId>99999999</base:taxpayerId>
+						<base:vatCode>2</base:vatCode>
+						<base:countyCode>41</base:countyCode>
 					</supplierTaxNumber>
-					<supplierName>Szállító Kft</supplierName>
+					<supplierName>Értékesítő Kft</supplierName>
 					<supplierAddress>
-						<detailedAddress>
-							<countryCode>HU</countryCode>
-							<postalCode>1111</postalCode>
-							<city>Budapest</city>
-							<streetName>Példa</streetName>
-							<publicPlaceCategory>utca</publicPlaceCategory>
-							<number>777</number>
-							<floor>1.</floor>
-							<door>3.</door>
-						</detailedAddress>
+						<base:detailedAddress>
+							<base:countryCode>HU</base:countryCode>
+							<base:postalCode>1234</base:postalCode>
+							<base:city>Budapest</base:city>
+							<base:streetName>Hármas</base:streetName>
+							<base:publicPlaceCategory>utca</base:publicPlaceCategory>
+							<base:number>1</base:number>
+						</base:detailedAddress>
 					</supplierAddress>
-					<supplierBankAccountNumber>88888888-66666666-12345678</supplierBankAccountNumber>
+					<supplierBankAccountNumber>12345678-12345678-12345678</supplierBankAccountNumber>
 				</supplierInfo>
 				<customerInfo>
-					<customerTaxNumber>
-						<taxpayerId>33333333</taxpayerId>
-						<vatCode>2</vatCode>
-						<countyCode>02</countyCode>
-					</customerTaxNumber>
-					<customerName>Vevő Kft</customerName>
+					<customerVatStatus>DOMESTIC</customerVatStatus>
+					<customerVatData>
+						<customerTaxNumber>
+							<base:taxpayerId>99887764</base:taxpayerId>
+							<base:vatCode>2</base:vatCode>
+							<base:countyCode>02</base:countyCode>
+						</customerTaxNumber>
+					</customerVatData>
+					<customerName>Beszerző Kft</customerName>
 					<customerAddress>
-						<detailedAddress>
-							<countryCode>HU</countryCode>
-							<postalCode>7600</postalCode>
-							<city>Pécs</city>
-							<streetName>Kitalált</streetName>
-							<publicPlaceCategory>köz</publicPlaceCategory>
-							<number>8</number>
-						</detailedAddress>
+						<base:detailedAddress>
+							<base:countryCode>HU</base:countryCode>
+							<base:postalCode>7600</base:postalCode>
+							<base:city>Pécs</base:city>
+							<base:streetName>Északi</base:streetName>
+							<base:publicPlaceCategory>sugárút</base:publicPlaceCategory>
+							<base:number>123</base:number>
+						</base:detailedAddress>
 					</customerAddress>
 				</customerInfo>
 				<invoiceDetail>
 					<invoiceCategory>NORMAL</invoiceCategory>
-					<invoiceDeliveryDate>2020-05-10</invoiceDeliveryDate>
+					<invoiceDeliveryDate>2021-05-10</invoiceDeliveryDate>
 					<currencyCode>HUF</currencyCode>
 					<exchangeRate>1</exchangeRate>
 					<paymentMethod>TRANSFER</paymentMethod>
-					<paymentDate>2020-05-30</paymentDate>
+					<paymentDate>2021-05-30</paymentDate>
 					<invoiceAppearance>PAPER</invoiceAppearance>
 				</invoiceDetail>
 			</invoiceHead>
 			<invoiceLines>
+				<mergedItemIndicator>false</mergedItemIndicator>
 				<line>
 					<lineNumber>1</lineNumber>
 					<lineModificationReference>
-						<lineNumberReference>11</lineNumberReference>
+						<lineNumberReference>6</lineNumberReference>
 						<lineOperation>CREATE</lineOperation>
 					</lineModificationReference>
 					<productCodes>
@@ -75,33 +78,34 @@
 					<lineExpressionIndicator>true</lineExpressionIndicator>
 					<lineNatureIndicator>PRODUCT</lineNatureIndicator>
 					<lineDescription>A termék</lineDescription>
-					<quantity>1.00</quantity>
+					<quantity>-1.00</quantity>
 					<unitOfMeasure>PIECE</unitOfMeasure>
 					<unitPrice>100000.00</unitPrice>
+					<unitPriceHUF>100000.00</unitPriceHUF>
 					<lineAmountsNormal>
 						<lineNetAmountData>
-							<lineNetAmount>100000</lineNetAmount>
-							<lineNetAmountHUF>100000</lineNetAmountHUF>
+							<lineNetAmount>-100000</lineNetAmount>
+							<lineNetAmountHUF>-100000</lineNetAmountHUF>
 						</lineNetAmountData>
 						<lineVatRate>
 							<vatPercentage>0.27</vatPercentage>
 						</lineVatRate>
 						<lineVatData>
-							<lineVatAmount>27000</lineVatAmount>
-							<lineVatAmountHUF>27000</lineVatAmountHUF>
+							<lineVatAmount>-27000</lineVatAmount>
+							<lineVatAmountHUF>-27000</lineVatAmountHUF>
 						</lineVatData>
 						<lineGrossAmountData>
-							<lineGrossAmountNormal>127000</lineGrossAmountNormal>
-							<lineGrossAmountNormalHUF>127000</lineGrossAmountNormalHUF>
+							<lineGrossAmountNormal>-127000</lineGrossAmountNormal>
+							<lineGrossAmountNormalHUF>-127000</lineGrossAmountNormalHUF>
 						</lineGrossAmountData>
 					</lineAmountsNormal>
 				</line>
 				<line>
 					<lineNumber>2</lineNumber>
 					<lineModificationReference>
-						<lineNumberReference>12</lineNumberReference>
+						<lineNumberReference>7</lineNumberReference>
 						<lineOperation>CREATE</lineOperation>
-					</lineModificationReference>					
+					</lineModificationReference>
 					<productCodes>
 						<productCode>
 							<productCodeCategory>OWN</productCodeCategory>
@@ -111,105 +115,108 @@
 					<lineExpressionIndicator>true</lineExpressionIndicator>
 					<lineNatureIndicator>PRODUCT</lineNatureIndicator>
 					<lineDescription>B termék</lineDescription>
-					<quantity>2.00</quantity>
+					<quantity>-2.00</quantity>
 					<unitOfMeasure>PIECE</unitOfMeasure>
 					<unitPrice>200000</unitPrice>
+					<unitPriceHUF>200000</unitPriceHUF>
 					<lineAmountsNormal>
 						<lineNetAmountData>
-							<lineNetAmount>400000</lineNetAmount>
-							<lineNetAmountHUF>400000</lineNetAmountHUF>
+							<lineNetAmount>-400000</lineNetAmount>
+							<lineNetAmountHUF>-400000</lineNetAmountHUF>
 						</lineNetAmountData>
 						<lineVatRate>
 							<vatPercentage>0.27</vatPercentage>
 						</lineVatRate>
 						<lineVatData>
-							<lineVatAmount>108000</lineVatAmount>
-							<lineVatAmountHUF>108000</lineVatAmountHUF>
+							<lineVatAmount>-108000</lineVatAmount>
+							<lineVatAmountHUF>-108000</lineVatAmountHUF>
 						</lineVatData>
 						<lineGrossAmountData>
-							<lineGrossAmountNormal>508000</lineGrossAmountNormal>
-							<lineGrossAmountNormalHUF>508000</lineGrossAmountNormalHUF>
+							<lineGrossAmountNormal>-508000</lineGrossAmountNormal>
+							<lineGrossAmountNormalHUF>-508000</lineGrossAmountNormalHUF>
 						</lineGrossAmountData>
 					</lineAmountsNormal>
 				</line>
 				<line>
 					<lineNumber>3</lineNumber>
 					<lineModificationReference>
-						<lineNumberReference>13</lineNumberReference>
+						<lineNumberReference>8</lineNumberReference>
 						<lineOperation>CREATE</lineOperation>
-					</lineModificationReference>					
+					</lineModificationReference>
 					<productCodes>
 						<productCode>
 							<productCodeCategory>OWN</productCodeCategory>
-							<productCodeValue>33333333</productCodeValue>
+							<productCodeValue>99887764</productCodeValue>
 						</productCode>
 					</productCodes>
 					<lineExpressionIndicator>true</lineExpressionIndicator>
 					<lineNatureIndicator>PRODUCT</lineNatureIndicator>
 					<lineDescription>C termék</lineDescription>
-					<quantity>3.00</quantity>
+					<quantity>-3.00</quantity>
 					<unitOfMeasure>PIECE</unitOfMeasure>
 					<unitPrice>300000</unitPrice>
+					<unitPriceHUF>300000</unitPriceHUF>
 					<lineAmountsNormal>
 						<lineNetAmountData>
-							<lineNetAmount>900000</lineNetAmount>
-							<lineNetAmountHUF>900000</lineNetAmountHUF>
+							<lineNetAmount>-900000</lineNetAmount>
+							<lineNetAmountHUF>-900000</lineNetAmountHUF>
 						</lineNetAmountData>
 						<lineVatRate>
 							<vatPercentage>0.27</vatPercentage>
 						</lineVatRate>
 						<lineVatData>
-							<lineVatAmount>243000</lineVatAmount>
-							<lineVatAmountHUF>243000</lineVatAmountHUF>
+							<lineVatAmount>-243000</lineVatAmount>
+							<lineVatAmountHUF>-243000</lineVatAmountHUF>
 						</lineVatData>
 						<lineGrossAmountData>
-							<lineGrossAmountNormal>1143000</lineGrossAmountNormal>
-							<lineGrossAmountNormalHUF>1143000</lineGrossAmountNormalHUF>
+							<lineGrossAmountNormal>-1143000</lineGrossAmountNormal>
+							<lineGrossAmountNormalHUF>-1143000</lineGrossAmountNormalHUF>
 						</lineGrossAmountData>
 					</lineAmountsNormal>
 				</line>
 				<line>
 					<lineNumber>4</lineNumber>
 					<lineModificationReference>
-						<lineNumberReference>14</lineNumberReference>
+						<lineNumberReference>9</lineNumberReference>
 						<lineOperation>CREATE</lineOperation>
-					</lineModificationReference>					
+					</lineModificationReference>
 					<productCodes>
 						<productCode>
 							<productCodeCategory>OWN</productCodeCategory>
-							<productCodeValue>666666</productCodeValue>
+							<productCodeValue>44444444</productCodeValue>
 						</productCode>
 					</productCodes>
 					<lineExpressionIndicator>true</lineExpressionIndicator>
 					<lineNatureIndicator>PRODUCT</lineNatureIndicator>
-					<lineDescription>F termék</lineDescription>
-					<quantity>1.00</quantity>
+					<lineDescription>D termék</lineDescription>
+					<quantity>-4.00</quantity>
 					<unitOfMeasure>PIECE</unitOfMeasure>
-					<unitPrice>600000</unitPrice>
+					<unitPrice>400000</unitPrice>
+					<unitPriceHUF>400000</unitPriceHUF>
 					<lineAmountsNormal>
 						<lineNetAmountData>
-							<lineNetAmount>600000</lineNetAmount>
-							<lineNetAmountHUF>600000</lineNetAmountHUF>
+							<lineNetAmount>-1600000</lineNetAmount>
+							<lineNetAmountHUF>-1600000</lineNetAmountHUF>
 						</lineNetAmountData>
 						<lineVatRate>
 							<vatPercentage>0.27</vatPercentage>
 						</lineVatRate>
 						<lineVatData>
-							<lineVatAmount>162000</lineVatAmount>
-							<lineVatAmountHUF>162000</lineVatAmountHUF>
+							<lineVatAmount>-432000</lineVatAmount>
+							<lineVatAmountHUF>-432000</lineVatAmountHUF>
 						</lineVatData>
 						<lineGrossAmountData>
-							<lineGrossAmountNormal>762000</lineGrossAmountNormal>
-							<lineGrossAmountNormalHUF>762000</lineGrossAmountNormalHUF>
+							<lineGrossAmountNormal>-2032000</lineGrossAmountNormal>
+							<lineGrossAmountNormalHUF>-2032000</lineGrossAmountNormalHUF>
 						</lineGrossAmountData>
 					</lineAmountsNormal>
 				</line>
 				<line>
 					<lineNumber>5</lineNumber>
 					<lineModificationReference>
-						<lineNumberReference>15</lineNumberReference>
+						<lineNumberReference>10</lineNumberReference>
 						<lineOperation>CREATE</lineOperation>
-					</lineModificationReference>					
+					</lineModificationReference>
 					<productCodes>
 						<productCode>
 							<productCodeCategory>OWN</productCodeCategory>
@@ -219,27 +226,28 @@
 					<lineExpressionIndicator>true</lineExpressionIndicator>
 					<lineNatureIndicator>PRODUCT</lineNatureIndicator>
 					<lineDescription>E termék</lineDescription>
-					<quantity>5.00</quantity>
+					<quantity>-5.00</quantity>
 					<unitOfMeasure>PIECE</unitOfMeasure>
 					<unitPrice>500000</unitPrice>
+					<unitPriceHUF>500000</unitPriceHUF>
 					<lineAmountsNormal>
 						<lineNetAmountData>
-							<lineNetAmount>2500000</lineNetAmount>
-							<lineNetAmountHUF>2500000</lineNetAmountHUF>
+							<lineNetAmount>-2500000</lineNetAmount>
+							<lineNetAmountHUF>-2500000</lineNetAmountHUF>
 						</lineNetAmountData>
 						<lineVatRate>
 							<vatPercentage>0.27</vatPercentage>
 						</lineVatRate>
 						<lineVatData>
-							<lineVatAmount>675000</lineVatAmount>
-							<lineVatAmountHUF>675000</lineVatAmountHUF>
+							<lineVatAmount>-675000</lineVatAmount>
+							<lineVatAmountHUF>-675000</lineVatAmountHUF>
 						</lineVatData>
 						<lineGrossAmountData>
-							<lineGrossAmountNormal>3175000</lineGrossAmountNormal>
-							<lineGrossAmountNormalHUF>3175000</lineGrossAmountNormalHUF>
+							<lineGrossAmountNormal>-3175000</lineGrossAmountNormal>
+							<lineGrossAmountNormalHUF>-3175000</lineGrossAmountNormalHUF>
 						</lineGrossAmountData>
 					</lineAmountsNormal>
-				</line>								
+				</line>
 			</invoiceLines>
 			<invoiceSummary>
 				<summaryNormal>
@@ -248,22 +256,22 @@
 							<vatPercentage>0.27</vatPercentage>
 						</vatRate>
 						<vatRateNetData>
-							<vatRateNetAmount>4500000</vatRateNetAmount>
-							<vatRateNetAmountHUF>4500000</vatRateNetAmountHUF>
+							<vatRateNetAmount>-5500000</vatRateNetAmount>
+							<vatRateNetAmountHUF>-5500000</vatRateNetAmountHUF>
 						</vatRateNetData>
 						<vatRateVatData>
-							<vatRateVatAmount>1215000</vatRateVatAmount>
-							<vatRateVatAmountHUF>1215000</vatRateVatAmountHUF>
+							<vatRateVatAmount>-1485000</vatRateVatAmount>
+							<vatRateVatAmountHUF>-1485000</vatRateVatAmountHUF>
 						</vatRateVatData>
 					</summaryByVatRate>
-					<invoiceNetAmount>4500000</invoiceNetAmount>
-					<invoiceNetAmountHUF>4500000</invoiceNetAmountHUF>
-					<invoiceVatAmount>1215000</invoiceVatAmount>
-					<invoiceVatAmountHUF>1215000</invoiceVatAmountHUF>
+					<invoiceNetAmount>-5500000</invoiceNetAmount>
+					<invoiceNetAmountHUF>-5500000</invoiceNetAmountHUF>
+					<invoiceVatAmount>-1485000</invoiceVatAmount>
+					<invoiceVatAmountHUF>-1485000</invoiceVatAmountHUF>
 				</summaryNormal>
 				<summaryGrossData>
-					<invoiceGrossAmount>5715000</invoiceGrossAmount>
-					<invoiceGrossAmountHUF>5715000</invoiceGrossAmountHUF>
+					<invoiceGrossAmount>-6985000</invoiceGrossAmount>
+					<invoiceGrossAmountHUF>-6985000</invoiceGrossAmountHUF>
 				</summaryGrossData>
 			</invoiceSummary>
 		</invoice>
