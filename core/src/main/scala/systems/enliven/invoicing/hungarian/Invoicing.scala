@@ -25,7 +25,7 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
       ConfigFactory.load("actor.conf")
     )
 
-  private var connection: Option[ActorRef[Connection.Protocol.Command]] = None
+  protected var connection: Option[ActorRef[Connection.Protocol.Command]] = None
 
   def classicSystem: akka.actor.ActorSystem = typedSystem.classicSystem
 
