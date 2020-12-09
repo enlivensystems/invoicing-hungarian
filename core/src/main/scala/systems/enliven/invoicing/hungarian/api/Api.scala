@@ -413,13 +413,13 @@ object Api extends XMLProtocol with Logger {
                                   aggregateInvoiceLineData = None,
                                   newTransportMean = None,
                                   depositIndicator = Some(false),
-                                  marginSchemeIndicator = None,
                                   obligatedForProductFee = None,
                                   GPCExcise = None,
                                   dieselOilPurchase = None,
                                   netaDeclaration = None,
                                   productFeeClause = None,
                                   lineProductFeeContent = Seq.empty,
+                                  conventionalLineInfo = None,
                                   additionalLineData = Seq.empty
                                 )
                             }
@@ -505,15 +505,15 @@ object Api extends XMLProtocol with Logger {
             """[0-9]{8}[-][0-9]{8}[-][0-9]{8}|[0-9]{8}[-][0-9]{8}|[A-Z]{2}[0-9]{2}[0-9A-Za-z]{11,30}"""
           )))
 
-          /** Ha a privatePersonIndicator magánszemély jelölő értéke true, akkor a vevői adatok közül az alábbi csomópontok nem
-            * lehetnek kitöltve:
+          /** Ha a vevő magánszemély (customerVatStatus = PRIVATE_PERSON), akkor a vevői adatok közül az alábbi csomópontok
+            * nem lehetnek kitöltve:
             * - customerVatData
             * - customerName
             * - customerAddress
             */
           override def toCustomerInfoType: CustomerInfoType =
             CustomerInfoType(
-              privatePersonIndicator = true,
+              customerVatStatus = PRIVATE_PERSON,
               customerVatData = None,
               customerName = None,
               customerAddress = None,
@@ -539,14 +539,15 @@ object Api extends XMLProtocol with Logger {
             """[0-9]{8}[-][0-9]{8}[-][0-9]{8}|[0-9]{8}[-][0-9]{8}|[A-Z]{2}[0-9]{2}[0-9A-Za-z]{11,30}"""
           )))
 
-          /** Ha a privatePersonIndicator magánszemély jelölő értéke false, akkor a vevői adatok közül az alábbi csomópontok
-            * kitöltése kötelező:
-            * - customerName
-            * - customerAddress
+          /** Amennyiben a vevő státusza belföldi adóalany (customerVatStatus = DOMESTIC), akkor az áfa
+            * regisztrált számlakibocsátónak az egyenes adózású ügylete kivételével kötelező a belföldi adóalany
+            * adószámának feltüntetése. Amennyiben a vevő belföldi adóalany (customerVatStatus = DOMESTIC) és
+            * a belföldi adószám (customerTaxNumber) nincs kitöltve, akkor az adatszolgáltatást az adóhivatali
+            * rendszer nem fogja befogadni (áfa regisztrált értékesítő kivételével).
             */
           override def toCustomerInfoType: CustomerInfoType =
             CustomerInfoType(
-              privatePersonIndicator = false,
+              customerVatStatus = DOMESTIC,
               customerVatData = Some(CustomerVatDataType(
                 DataRecord[CustomerTaxNumberType](
                   None,
