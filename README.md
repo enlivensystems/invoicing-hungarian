@@ -1,6 +1,6 @@
-# Scala interface to NAV Online Invoicing API 2.0
+# Scala interface to NAV Online Invoicing API 3.0
 
-Hungarian Invoicing is a Scala library to interface with NAV Online Invoicing API 2.0.
+Hungarian Invoicing is a Scala library to interface with NAV Online Invoicing API 3.0.
 
 ## Installation
 
@@ -13,10 +13,9 @@ resolvers ++= Seq("Enliven Systems Central" at "https://central.enliven.systems/
 Add as a dependency:
 
 ```
-"systems.enliven.invoicing.hungarian" %% "core" % "0.3.6"
+"systems.enliven.invoicing.hungarian" %% "core" % "1.0.0"
 ```
 
-Don't let the low version number fool you. See Test section for more details.
 Please note that currently we only provide Scala 2.12 builds. Drop us a message in case you need
 a build for Scala 2.11 or Scala 2.13. Java port is possible. See more info below.
 
@@ -36,11 +35,11 @@ some of them directly connect to NAV servers.
 sbt test
 ```
 
-Each build is released with 46+ tests succeeds on our CI. Running tests with a proper configuration
+Each build is released with 52+ tests succeeds on our CI. Running tests with a proper configuration
 you should see:
 
 ```
-[info] Tests: succeeded 46, failed 0, canceled 0, ignored 0, pending 0
+[info] Tests: succeeded 52, failed 0, canceled 0, ignored 0, pending 0
 ```
 
 ## Usage & features
@@ -62,8 +61,6 @@ invoicing-hungarian {
   connection {
     # The number of Connection actors in the ConnectionPool.
     pool = 6
-    # The size of the stash used to save request while exchange tokens are not available.
-    stash = 100
     # The maximum number of consequent retries to refresh the exchange token if network error occurs
     # API error will not be retried.
     maxRetry = 10
@@ -86,12 +83,12 @@ invoicing-hungarian {
     tax-number = "25962295"
   }
   request {
-    base = "https://api-test.onlineszamla.nav.gov.hu/invoiceService/v2/"
+    base = "https://api-test.onlineszamla.nav.gov.hu/invoiceService/v3/"
   }
   software {
     identifier = "ENLIVEN25962295207"
     name = "Enliven Systems Invoicing Hungarian"
-    version = "0.0.3"
+    version = "1.0.0"
     developer = {
       name = "Enliven Systems Kft."
       contact = "hello@enliven.systems"
