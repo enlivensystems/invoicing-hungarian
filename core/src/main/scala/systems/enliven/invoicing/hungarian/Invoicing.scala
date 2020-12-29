@@ -61,8 +61,9 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
     connection = Some(Await.result(connect(), Duration.Inf).pool)
   }
 
-  def invoices(invoices: Invoices, timeout: FiniteDuration)(implicit
-  askTimeout: Timeout): Try[ManageInvoiceResponse] =
+  def invoices(invoices: Invoices, timeout: FiniteDuration)(
+    implicit askTimeout: Timeout
+  ): Try[ManageInvoiceResponse] =
     Await.result(
       connection.get.ask[Try[ManageInvoiceResponse]](
         replyTo => Connection.Protocol.ManageInvoice(replyTo, invoices)

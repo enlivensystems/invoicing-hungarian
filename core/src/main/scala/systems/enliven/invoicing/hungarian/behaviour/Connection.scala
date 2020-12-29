@@ -1,7 +1,7 @@
 package systems.enliven.invoicing.hungarian.behaviour
 
 import akka.actor.Scheduler
-import akka.actor.typed.scaladsl.{ActorContext, Behaviors, StashBuffer, TimerScheduler}
+import akka.actor.typed.scaladsl.{ActorContext, Behaviors, TimerScheduler}
 import akka.actor.typed.{ActorRef, Behavior, DispatcherSelector}
 import akka.pattern.retry
 import systems.enliven.invoicing.hungarian.api.Api.Protocol.Request.Invoices
@@ -14,25 +14,19 @@ import systems.enliven.invoicing.hungarian.generated.{
   TokenExchangeResponse
 }
 
-import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success, Try}
 
 object Connection {
 
-  def apply(configuration: Configuration): Behavior[Protocol.Command] = {
-    val stashCapacity: Int = configuration.get[Int]("invoicing-hungarian.connection.stash")
-
+  def apply(configuration: Configuration): Behavior[Protocol.Command] =
     Behaviors.setup[Protocol.Message] {
       context =>
-        Behaviors.withStash(stashCapacity) {
-          buffer =>
-            Behaviors.withTimers {
-              timers => new Connection(configuration, timers, buffer, context).initState
-            }
+        Behaviors.withTimers {
+          timers => new Connection(configuration, timers, context).initState
         }
     }.narrow
-  }
 
   object Protocol {
     sealed trait Message
@@ -50,12 +44,15 @@ object Connection {
       invoices: Invoices)
      extends Command
 
-    final case class WrappedManageInvoice(
-      replyTo: ActorRef[Try[ManageInvoiceResponse]],
-      invoices: Invoices)
+    final case class PriorityManageInvoice(
+      token: Token,
+      manageInvoice: ManageInvoice)
      extends PrivateCommand
 
-    final case object PreloadToken extends PrivateCommand
+    final case class PreloadToken() extends PrivateCommand
+
+    final case class PreloadedToken(token: Token) extends PrivateCommand
+    final case class TokenLoadFailed(throwable: Throwable) extends PrivateCommand
   }
 
   final private case object TimerKey
@@ -65,7 +62,6 @@ object Connection {
 class Connection private (
   configuration: Configuration,
   timers: TimerScheduler[Protocol.Message],
-  buffer: StashBuffer[Protocol.Message],
   context: ActorContext[Protocol.Message])
  extends Logger {
 
@@ -84,58 +80,73 @@ class Connection private (
 
   /** According to the API documentation "single-use data reporting token".
     */
-  private var tokens: Seq[Token] = Seq.empty
   private var preloadedToken: Option[Token] = None
 
   private def initState: Behavior[Protocol.Message] = {
-    timers.startSingleTimer(Connection.TimerKey, Protocol.PreloadToken, 100.milliseconds)
+    timers.startSingleTimer(Connection.TimerKey, Protocol.PreloadToken(), 100.milliseconds)
+
     Behaviors.receiveMessage {
       case Protocol.QueryTransactionStatus(replyTo, transactionID, returnOriginalRequest) =>
-        log.debug(
+        log.trace(
           "Received [query-transaction-status] request with transaction ID [{}].",
           transactionID
         )
         queryTransactionStatus(replyTo, transactionID, returnOriginalRequest)
-
         Behaviors.same
       case Protocol.ManageInvoice(replyTo, invoices) =>
-        log.debug("Received [manage-invoice] request.")
-        if (preloadedToken.isDefined) {
-          log.info("Using preloaded token [{}].", preloadedToken.get)
-          implicit val token: Token = preloadedToken.get
-          preloadedToken = None
-          timers.startSingleTimer(Connection.TimerKey, Protocol.PreloadToken, 1.seconds)
-          manageInvoice(replyTo, invoices)
-        } else {
-          log.debug("Requesting new token.")
-          buffer.stash(Protocol.WrappedManageInvoice(replyTo, invoices))
-          refreshToken {
-            response: TokenExchangeResponse =>
-              val token = new Token(response, api.getExchangeKey)
-              tokens = tokens :+ token
-              log.debug("New token [{}] acquired.", token.value)
-              buffer.unstash(Behaviors.same, 1, identity)
-          }
-        }
-        Behaviors.same
-      case Protocol.WrappedManageInvoice(replyTo, invoices) =>
-        implicit val token: Token = tokens.head
-        tokens = tokens.tail
-        log.debug("Running [manage-invoice] with token [{}].", token.value)
-        manageInvoice(replyTo, invoices)
-        Behaviors.same
-      case Protocol.PreloadToken =>
-        log.debug("Preloading token.")
-        refreshToken {
-          response: TokenExchangeResponse =>
-            preloadedToken = Some(new Token(response, api.getExchangeKey))
-            log.debug("Token [{}] preloaded.", preloadedToken.get.value)
-            timers.startSingleTimer(
-              Connection.TimerKey,
-              Protocol.PreloadToken,
-              4.minutes + 30.seconds
+        log.trace("Received [manage-invoice] request.")
+
+        preloadedToken match {
+          case Some(token: Token) =>
+            context.self ! Protocol.PriorityManageInvoice(
+              token,
+              Protocol.ManageInvoice(replyTo, invoices)
             )
+            preloadedToken = None
+            timers.startSingleTimer(Connection.TimerKey, Protocol.PreloadToken(), 30.seconds)
+          case None =>
+            log.trace("Requesting new token.")
+            context.pipeToSelf(refreshToken()) {
+              case Success(response: TokenExchangeResponse) =>
+                Protocol.PriorityManageInvoice(
+                  new Token(response, api.getExchangeKey),
+                  Protocol.ManageInvoice(replyTo, invoices)
+                )
+              case Failure(throwable: Throwable) => Protocol.TokenLoadFailed(throwable)
+            }
         }
+        Behaviors.same
+      case Protocol.PriorityManageInvoice(token, Protocol.ManageInvoice(replyTo, invoices)) =>
+        log.trace("Running [manage-invoice] with token [{}].", token.value)
+
+        manageInvoice(invoices)(token).onComplete {
+          case Success(response: Try[ManageInvoiceResponse]) =>
+            log.trace("Finish Invoice.")
+            replyTo ! response
+          case Failure(throwable: Throwable) =>
+            log.trace("Finish Invoice.")
+            replyTo ! Failure(throwable)
+        }
+        Behaviors.same
+      case Protocol.PreloadToken() =>
+        log.trace("Preloading token.")
+
+        context.pipeToSelf(refreshToken()) {
+          case Success(response: TokenExchangeResponse) =>
+            Protocol.PreloadedToken(new Token(response, api.getExchangeKey))
+          case Failure(throwable: Throwable) => Protocol.TokenLoadFailed(throwable)
+        }
+        Behaviors.same
+      case Protocol.PreloadedToken(token) =>
+        preloadedToken = Some(token)
+        log.trace("Token [{}] preloaded.", preloadedToken.get.value)
+        timers.startSingleTimer(
+          Connection.TimerKey,
+          Protocol.PreloadToken(),
+          4.minutes + 30.seconds
+        )
+        Behaviors.same
+      case Protocol.TokenLoadFailed(_) =>
         Behaviors.same
       case _ =>
         Behaviors.unhandled
@@ -162,46 +173,47 @@ class Connection private (
         )
     }
 
-  private def manageInvoice(
-    replyTo: ActorRef[Try[ManageInvoiceResponse]],
-    invoices: Invoices
-  )(implicit token: Token): Unit =
-    api.manageInvoice(invoices.toRequest).onComplete {
-      case Success(value) =>
-        log.debug("Request [manage-invoice] finished.")
-        replyTo ! value
-      case Failure(exception) =>
-        log.error(
-          "Could not manage invoice due to [{}] with message [{}]4",
-          exception.getClass.getName,
-          exception.getMessage
-        )
-    }
+  private def manageInvoice(invoices: Invoices)(
+    implicit token: Token
+  ): Future[Try[ManageInvoiceResponse]] =
+    api.manageInvoice(invoices.toRequest)
+      .flatMap {
+        result: Try[ManageInvoiceResponse] =>
+          log.trace("Request [manage-invoice] finished.")
+          Future.successful[Try[ManageInvoiceResponse]](result)
+      }
+      .recoverWith {
+        case throwable: Throwable =>
+          log.error(
+            "Could not manage invoice due to [{}] with message [{}]4",
+            throwable.getClass.getName,
+            throwable.getMessage
+          )
+          Future.failed[Try[ManageInvoiceResponse]](throwable)
+      }
 
-  private def refreshToken(onSuccess: TokenExchangeResponse => Unit): Unit = {
+  private def refreshToken(): Future[TokenExchangeResponse] =
     retry(
       () => api.tokenExchange(),
       maxRetry,
       attempted => Option(200.milliseconds * attempted)
-    ).onComplete {
-      case Success(result) =>
-        result match {
-          case Success(response) =>
-            onSuccess(response)
-          case Failure(exception) =>
-            log.error(
-              "Could not refresh exchange token due to [{}] with message [{}]!",
-              exception.getClass.getSimpleName,
-              exception.getMessage
-            )
-        }
-      case Failure(throwable: Throwable) => // Network error
+    ).flatMap {
+      case Success(response) => Future.successful[TokenExchangeResponse](response)
+      case Failure(throwable: Throwable) =>
         log.error(
           "Could not refresh exchange token due to [{}] with message [{}]!",
           throwable.getClass.getSimpleName,
           throwable.getMessage
         )
+        Future.failed[TokenExchangeResponse](throwable)
+    }.recoverWith {
+      case throwable: Throwable =>
+        log.error(
+          "Could not refresh exchange token due to [{}] with message [{}]!",
+          throwable.getClass.getSimpleName,
+          throwable.getMessage
+        )
+        Future.failed[TokenExchangeResponse](throwable)
     }
-  }
 
 }

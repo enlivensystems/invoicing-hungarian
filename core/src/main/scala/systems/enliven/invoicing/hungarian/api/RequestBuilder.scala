@@ -5,13 +5,10 @@ import java.time.{Instant, ZoneId}
 
 import javax.xml.datatype.DatatypeFactory
 import org.apache.commons.lang3.RandomStringUtils
+import scalaxb.DataRecord
+import scalaxb.DataRecord.__StringXMLFormat
 import systems.enliven.invoicing.hungarian.core.Logger
-import systems.enliven.invoicing.hungarian.generated.{
-  BasicHeaderType,
-  Number1u460Value,
-  Number2u460,
-  UserHeaderType
-}
+import systems.enliven.invoicing.hungarian.generated.{BasicHeaderType, CryptoType, Number1u460, Number3u460, UserHeaderType}
 
 class RequestBuilder(apiData: Data) extends Logger {
   private val passwordHash: String = Hash.hashSHA512(apiData.auth.password)
@@ -25,16 +22,19 @@ class RequestBuilder(apiData: Data) extends Logger {
       DatatypeFactory.newInstance.newXMLGregorianCalendar(
         RequestBuilder.instantFormatter.format(timestamp)
       ),
-      Number2u460,
-      Some(Number1u460Value)
+      Number3u460.toString,
+      Some(Number1u460.toString)
     )
 
   def buildUserHeader[T : Hash](requestID: String, timestamp: Instant, payload: T): UserHeaderType =
     UserHeaderType(
       apiData.auth.login,
-      passwordHash,
+      CryptoType(passwordHash, Map("@cryptoType" -> DataRecord[String](None, None, "SHA2-512"))),
       apiData.entity.taxNumber,
-      buildRequestSignature(requestID, timestamp, payload)
+      CryptoType(
+        buildRequestSignature(requestID, timestamp, payload),
+        Map("@cryptoType" -> DataRecord[String](None, None, "SHA3-512"))
+      )
     )
 
   def buildRequestSignature[T : Hash](requestID: String, timestamp: Instant, payload: T): String =
@@ -48,9 +48,12 @@ class RequestBuilder(apiData: Data) extends Logger {
   def buildUserHeader(requestID: String, timestamp: Instant): UserHeaderType =
     UserHeaderType(
       apiData.auth.login,
-      passwordHash,
+      CryptoType(passwordHash, Map("@cryptoType" -> DataRecord[String](None, None, "SHA2-512"))),
       apiData.entity.taxNumber,
-      buildRequestSignature(requestID, timestamp)
+      CryptoType(
+        buildRequestSignature(requestID, timestamp),
+        Map("@cryptoType" -> DataRecord[String](None, None, "SHA3-512"))
+      )
     )
 
   def buildRequestSignature(requestID: String, timestamp: Instant): String =
