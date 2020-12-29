@@ -8,13 +8,18 @@ import org.apache.commons.lang3.RandomStringUtils
 import scalaxb.DataRecord
 import scalaxb.DataRecord.__StringXMLFormat
 import systems.enliven.invoicing.hungarian.core.Logger
-import systems.enliven.invoicing.hungarian.generated.{BasicHeaderType, CryptoType, Number1u460, Number3u460, UserHeaderType}
+import systems.enliven.invoicing.hungarian.generated.{
+  BasicHeaderType,
+  CryptoType,
+  Number1u460,
+  Number3u460,
+  UserHeaderType
+}
 
 class RequestBuilder(apiData: Data) extends Logger {
   private val passwordHash: String = Hash.hashSHA512(apiData.auth.password)
 
-  def nextRequestID: String =
-    RandomStringUtils.randomAlphanumeric(30)
+  def nextRequestID: String = RandomStringUtils.randomAlphanumeric(30)
 
   def buildBasicHeader(requestID: String, timestamp: Instant): BasicHeaderType =
     BasicHeaderType(
@@ -29,7 +34,7 @@ class RequestBuilder(apiData: Data) extends Logger {
   def buildUserHeader[T : Hash](requestID: String, timestamp: Instant, payload: T): UserHeaderType =
     UserHeaderType(
       apiData.auth.login,
-      CryptoType(passwordHash, Map("@cryptoType" -> DataRecord[String](None, None, "SHA2-512"))),
+      CryptoType(passwordHash, Map("@cryptoType" -> DataRecord[String](None, None, "SHA-512"))),
       apiData.entity.taxNumber,
       CryptoType(
         buildRequestSignature(requestID, timestamp, payload),
@@ -48,7 +53,7 @@ class RequestBuilder(apiData: Data) extends Logger {
   def buildUserHeader(requestID: String, timestamp: Instant): UserHeaderType =
     UserHeaderType(
       apiData.auth.login,
-      CryptoType(passwordHash, Map("@cryptoType" -> DataRecord[String](None, None, "SHA2-512"))),
+      CryptoType(passwordHash, Map("@cryptoType" -> DataRecord[String](None, None, "SHA-512"))),
       apiData.entity.taxNumber,
       CryptoType(
         buildRequestSignature(requestID, timestamp),
