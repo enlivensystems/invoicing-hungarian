@@ -1,10 +1,10 @@
 package systems.enliven.invoicing.hungarian.api
 
-import java.nio.charset.StandardCharsets
-import java.security.MessageDigest
-
 import org.bouncycastle.jcajce.provider.digest.SHA3
 import systems.enliven.invoicing.hungarian.generated.InvoiceOperationListType
+
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 
 trait Hash[T] {
   def hashed(payload: T): String
@@ -26,8 +26,12 @@ object Hash {
 
     def hashed(payload: InvoiceOperationListType): String =
       payload.invoiceOperation
-        .map(invoice => invoice.invoiceOperation.toString + invoice.invoiceData)
-        .map(base => hashSHA3512(base))
+        .map(
+          invoice => invoice.invoiceOperation.toString + invoice.invoiceData
+        )
+        .map(
+          base => hashSHA3512(base)
+        )
         .mkString
 
   }

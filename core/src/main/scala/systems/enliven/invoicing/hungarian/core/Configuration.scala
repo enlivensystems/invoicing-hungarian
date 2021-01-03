@@ -20,8 +20,7 @@ object Configuration {
       fromEnvironment: Boolean,
       restrictTo: Option[String],
       silent: Boolean
-    ): Configuration =
-      new Configuration(silent)
+    ): Configuration = new Configuration(silent)
 
   }
 

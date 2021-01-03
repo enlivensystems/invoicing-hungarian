@@ -1,9 +1,5 @@
 package systems.enliven.invoicing.hungarian.api
 
-import java.time.format.DateTimeFormatter
-import java.time.{Instant, ZoneId}
-
-import javax.xml.datatype.DatatypeFactory
 import org.apache.commons.lang3.RandomStringUtils
 import scalaxb.DataRecord
 import scalaxb.DataRecord.__StringXMLFormat
@@ -15,6 +11,10 @@ import systems.enliven.invoicing.hungarian.generated.{
   Number3u460,
   UserHeaderType
 }
+
+import java.time.format.DateTimeFormatter
+import java.time.{Instant, ZoneId}
+import javax.xml.datatype.DatatypeFactory
 
 class RequestBuilder(apiData: Data) extends Logger {
   private val passwordHash: String = Hash.hashSHA512(apiData.auth.password)

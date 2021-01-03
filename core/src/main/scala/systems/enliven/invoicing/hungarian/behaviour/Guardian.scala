@@ -28,9 +28,13 @@ object Guardian extends Logger {
                 timers.startSingleTimer(TimerKey, Protocol.ForceShutdown, 5.seconds)
                 Behaviors.same
               case Protocol.PoolShutdown =>
-                Behaviors.stopped(() => log.debug("Guardian is shutting down gracefully!"))
+                Behaviors.stopped(
+                  () => log.debug("Guardian is shutting down gracefully!")
+                )
               case Protocol.ForceShutdown =>
-                Behaviors.stopped(() => log.debug("Guardian is shutting down forcefully!"))
+                Behaviors.stopped(
+                  () => log.debug("Guardian is shutting down forcefully!")
+                )
             }
         }
     }.narrow

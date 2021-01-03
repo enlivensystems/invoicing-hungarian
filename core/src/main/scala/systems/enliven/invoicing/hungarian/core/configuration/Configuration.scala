@@ -1,23 +1,22 @@
 package systems.enliven.invoicing.hungarian.core.configuration
 
-import java.io.{File, Serializable}
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Paths}
-import java.util.Properties
-
 import com.typesafe.config.ConfigException.{Missing, WrongType}
 import com.typesafe.config._
 import systems.enliven.invoicing.hungarian.core
 import systems.enliven.invoicing.hungarian.core.{Factory, Logger}
 
+import java.io.{File, Serializable}
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Path, Paths}
+import java.util.Properties
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
 import scala.language.reflectiveCalls
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
-import java.nio.file.Path
 
-/** Abstract configuration that we enforce throughout the Hub and in our applications.
+/**
+  * Abstract configuration that we enforce throughout the Hub and in our applications.
   *
   * Any specialized configuration extending this should have a default constructor and should
   * define a default value for each class parameter.
@@ -124,7 +123,8 @@ abstract class Configuration[
     }
   }
 
-  /** Reloads the configuration from the working directory.
+  /**
+    * Reloads the configuration from the working directory.
     *
     * A file with the same name will be searched for in the application's current working directory.
     * It will validate the configuration with the pre-loaded reference.
@@ -136,7 +136,8 @@ abstract class Configuration[
     reloadFromFile(path)
   }
 
-  /** Reloads the configuration from the given file.
+  /**
+    * Reloads the configuration from the given file.
     *
     * It will validate the configuration with the pre-loaded reference.
     *
@@ -149,7 +150,8 @@ abstract class Configuration[
     }
   }
 
-  /** Sets the underlying (typesafe) configuration. It will also validate the configuration
+  /**
+    * Sets the underlying (typesafe) configuration. It will also validate the configuration
     * with the same reference that has been loaded when this configuration has been created.
     *
     * This is package protected to avoid users mess with the underlying model of this configuration,
@@ -195,12 +197,14 @@ abstract class Configuration[
       case _: Missing => None
     }
 
-  /** Gets a specific `key` from the domain of this configuration.
+  /**
+    * Gets a specific `key` from the domain of this configuration.
     */
   def getFromDomain[T : TypeTag](key: String): T =
     get[T](restrictTo.map(_ + ".").getOrElse("") + key)
 
-  /** Gets all the key-values from this configuration as a string-string map.
+  /**
+    * Gets all the key-values from this configuration as a string-string map.
     */
   def getAll: Map[String, String] =
     configuration.entrySet().asScala.toList.map(
@@ -209,7 +213,8 @@ abstract class Configuration[
       case (k, v) => k -> v.unwrapped().toString
     }
 
-  /** Gets the list of objects under this `key` as a map of string-string pairs.
+  /**
+    * Gets the list of objects under this `key` as a map of string-string pairs.
     *
     * @throws Throwable If anything goes wrong, probably if `key` is not an object list.
     */
@@ -233,7 +238,8 @@ abstract class Configuration[
         None
     }
 
-  /** Gets the configuration as the type specifies.
+  /**
+    * Gets the configuration as the type specifies.
     *
     * Unsupported types will return with `AnyRef` casted to the specified type.
     * Be aware.
@@ -273,7 +279,8 @@ abstract class Configuration[
       case t: WrongType => log.warn(s"Configuration [$key] is of wrong type!"); throw t
     }
 
-  /** Sets a key to the supplied value in this configuration.
+  /**
+    * Sets a key to the supplied value in this configuration.
     *
     * @throws core.Exception If the specified key is restricted by this configuration.
     */
@@ -314,7 +321,8 @@ abstract class Configuration[
 
   def underlyingConfiguration: Config = configuration
 
-  /** Extends the default configuration with the resource configuration's values.
+  /**
+    * Extends the default configuration with the resource configuration's values.
     */
   private def mergeConfigurations(): Config = {
     var conf = _defaults

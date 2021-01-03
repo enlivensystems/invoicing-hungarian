@@ -78,7 +78,8 @@ class Connection private (
   private val api =
     new Api()(configuration, context.system.classicSystem, context.executionContext)
 
-  /** According to the API documentation "single-use data reporting token".
+  /**
+    * According to the API documentation "single-use data reporting token".
     */
   private var preloadedToken: Option[Token] = None
 

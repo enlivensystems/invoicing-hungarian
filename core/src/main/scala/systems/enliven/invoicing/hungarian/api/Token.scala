@@ -1,8 +1,9 @@
 package systems.enliven.invoicing.hungarian.api
 
+import systems.enliven.invoicing.hungarian.generated.TokenExchangeResponse
+
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
-import systems.enliven.invoicing.hungarian.generated.TokenExchangeResponse
 
 case class Token(value: String, refreshed: Long, validFrom: Long, validTo: Long) {
   def this(tokenExchangeResponse: TokenExchangeResponse, exchangeKey: String) =
