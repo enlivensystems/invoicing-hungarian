@@ -6,13 +6,14 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.Accept
 import akka.util.ByteString
 import scalaxb.{Base64Binary, DataRecord, XMLFormat}
+import systems.enliven.invoicing.hungarian.api.data.{Issuer, Item}
+import systems.enliven.invoicing.hungarian.api.recipient.Recipient
 import systems.enliven.invoicing.hungarian.core
 import systems.enliven.invoicing.hungarian.core.{Configuration, Logger}
 import systems.enliven.invoicing.hungarian.generated.{
   AddressType,
   CARD,
   CREATE,
-  CustomerInfoType,
   DetailedAddressType,
   GeneralErrorResponse,
   InvoiceDataType,
@@ -536,135 +537,6 @@ object Api extends XMLProtocol with Logger {
           }
 
         }
-
-        trait Recipient {
-          def toCustomerInfoType: CustomerInfoType
-        }
-
-        case class PrivatePerson(bankAccountNumber: Option[String]) extends Recipient {
-          require(bankAccountNumber.forall(_.matches(
-            """[0-9]{8}[-][0-9]{8}[-][0-9]{8}|[0-9]{8}[-][0-9]{8}|[A-Z]{2}[0-9]{2}[0-9A-Za-z]{11,30}"""
-          )))
-
-          /** Ha a vevő magánszemély (customerVatStatus = PRIVATE_PERSON), akkor a vevői adatok közül az alábbi csomópontok
-            * nem lehetnek kitöltve:
-            * - customerVatData
-            * - customerName
-            * - customerAddress
-            */
-          override def toCustomerInfoType: CustomerInfoType =
-            CustomerInfoType(
-              customerVatStatus = PRIVATE_PERSON,
-              customerVatData = None,
-              customerName = None,
-              customerAddress = None,
-              customerBankAccountNumber = bankAccountNumber
-            )
-
-        }
-
-        // nem csoportos áfaalany
-        case class Company(
-          taxNumber: String,
-          vatCode: Option[String],
-          taxCounty: Option[String],
-          name: String,
-          address: Address,
-          bankAccountNumber: Option[String])
-         extends Recipient {
-          require(taxNumber.matches("""[0-9]{8}"""))
-          require(vatCode.forall(_.matches("""[1-5]{1}""")))
-          require(taxCounty.forall(_.matches("""[0-9]{2}""")))
-          require(name.nonEmpty)
-          require(bankAccountNumber.forall(_.matches(
-            """[0-9]{8}[-][0-9]{8}[-][0-9]{8}|[0-9]{8}[-][0-9]{8}|[A-Z]{2}[0-9]{2}[0-9A-Za-z]{11,30}"""
-          )))
-
-          /** Amennyiben a vevő státusza belföldi adóalany (customerVatStatus = DOMESTIC), akkor az áfa
-            * regisztrált számlakibocsátónak az egyenes adózású ügylete kivételével kötelező a belföldi adóalany
-            * adószámának feltüntetése. Amennyiben a vevő belföldi adóalany (customerVatStatus = DOMESTIC) és
-            * a belföldi adószám (customerTaxNumber) nincs kitöltve, akkor az adatszolgáltatást az adóhivatali
-            * rendszer nem fogja befogadni (áfa regisztrált értékesítő kivételével).
-            */
-          override def toCustomerInfoType: CustomerInfoType =
-            CustomerInfoType(
-              customerVatStatus = DOMESTIC,
-              customerVatData = Some(CustomerVatDataType(
-                DataRecord[CustomerTaxNumberType](
-                  None,
-                  Some("customerTaxNumber"),
-                  CustomerTaxNumberType(
-                    taxpayerId = taxNumber,
-                    vatCode = vatCode,
-                    countyCode = taxCounty,
-                    groupMemberTaxNumber = None
-                  )
-                )
-              )),
-              customerName = Some(name),
-              customerAddress = Some(AddressType(
-                DataRecord[DetailedAddressType](
-                  namespace = Some("http://schemas.nav.gov.hu/OSA/3.0/base"),
-                  key = Some("detailedAddress"),
-                  value = DetailedAddressType(
-                    countryCode = address.countryCode,
-                    region = address.region,
-                    postalCode = address.postalCode,
-                    city = address.city,
-                    streetName = address.streetName,
-                    publicPlaceCategory = address.publicPlaceCategory,
-                    number = address.number,
-                    building = address.building,
-                    staircase = address.staircase,
-                    floor = address.floor,
-                    door = address.door,
-                    lotNumber = address.lotNumber
-                  )
-                )
-              )),
-              customerBankAccountNumber = bankAccountNumber
-            )
-
-        }
-
-        case class Address(
-          countryCode: String,
-          region: Option[String] = None,
-          postalCode: String,
-          city: String,
-          streetName: String,
-          publicPlaceCategory: String,
-          number: Option[String] = None,
-          building: Option[String] = None,
-          staircase: Option[String] = None,
-          floor: Option[String] = None,
-          door: Option[String] = None,
-          lotNumber: Option[String] = None) {
-          require(countryCode.matches("""[A-Z]{2}"""))
-          require(postalCode.matches("""[A-Z0-9][A-Z0-9\s\-]{1,8}[A-Z0-9]"""))
-        }
-
-        case class Issuer(
-          taxNumber: String,
-          taxCode: String,
-          taxCounty: String,
-          communityTaxNumber: String,
-          name: String,
-          address: Address,
-          bankAccountNumber: String) {
-          require(taxCode.matches("""[1-5]"""))
-          require(taxCounty.matches("""[0-9]{2}"""))
-          require(communityTaxNumber.matches("""[A-Z]{2}[0-9A-Z]{2,13}"""))
-          require(name.nonEmpty)
-          require(bankAccountNumber.nonEmpty)
-        }
-
-        case class Item(
-          name: String,
-          quantity: Int,
-          price: BigDecimal,
-          tax: BigDecimal,
-          intermediated: Boolean)
 
         case class Reference(number: String, reported: Boolean = true, index: Int = 1)
 

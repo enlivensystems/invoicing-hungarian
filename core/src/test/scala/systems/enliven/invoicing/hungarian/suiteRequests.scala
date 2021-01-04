@@ -1,45 +1,20 @@
 package systems.enliven.invoicing.hungarian
 
-import java.util.Date
-import java.util.concurrent.atomic.AtomicInteger
-
-import javax.xml.bind.DatatypeConverter
 import org.apache.commons.lang3.RandomStringUtils
 import systems.enliven.invoicing.hungarian.api.Api.Protocol.Request.Invoices
-import systems.enliven.invoicing.hungarian.api.Api.Protocol.Request.Invoices.{
-  Address,
-  Company,
-  Issuer,
-  Item,
-  PrivatePerson,
-  Recipient
-}
+import systems.enliven.invoicing.hungarian.api.data.{Address, Issuer, Item}
+import systems.enliven.invoicing.hungarian.api.recipient.Recipient
 
+import java.util.Date
+import java.util.concurrent.atomic.AtomicInteger
+import javax.xml.bind.DatatypeConverter
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
 class suiteRequests extends invoicingSuite {
 
-  val privatePerson = PrivatePerson(bankAccountNumber = Some("00000000-00000000-00000000"))
-
-  val company = Company(
-    taxNumber = "12345678",
-    vatCode = None,
-    taxCounty = None,
-    name = "W A",
-    address = Address(
-      countryCode = "HU",
-      region = None,
-      postalCode = "1092",
-      city = "W",
-      streetName = "W",
-      publicPlaceCategory = "W"
-    ),
-    bankAccountNumber = Some("00000000-00000000-00000000")
-  )
-
   val smartInvoices: Seq[Invoices.Invoice] = {
-    Seq[Recipient](privatePerson, company).map {
+    TestDataGenerator.testRecipients.map {
       recipient: Recipient =>
         Invoices.Smart(
           number = RandomStringUtils.randomAlphanumeric(32),
@@ -70,10 +45,10 @@ class suiteRequests extends invoicingSuite {
           operation = Invoices.Operation.create,
           items = Seq(
             Item(
-              name = "W",
-              quantity = 1,
-              price = 100,
-              tax = 0.27,
+              name = TestDataGenerator.faker.commerce().productName(),
+              quantity = scala.util.Random.nextInt(10) + 1,
+              price = BigDecimal(scala.util.Random.nextInt(1000) + 1),
+              tax = BigDecimal("0.27"),
               intermediated = false
             )
           )
@@ -82,10 +57,10 @@ class suiteRequests extends invoicingSuite {
   }
 
   val invoices: Invoices = Invoices(
-    smartInvoices :+
-      Invoices.Raw(Invoices.Operation.create, DatatypeConverter.parseBase64Binary("something")) :+
-      Invoices.Raw(Invoices.Operation.modify, DatatypeConverter.parseBase64Binary("something")) :+
-      Invoices.Raw(Invoices.Operation.storno, DatatypeConverter.parseBase64Binary("dark side"))
+    Invoices.Raw(Invoices.Operation.create, DatatypeConverter.parseBase64Binary("something")) ::
+      Invoices.Raw(Invoices.Operation.modify, DatatypeConverter.parseBase64Binary("something")) ::
+      Invoices.Raw(Invoices.Operation.storno, DatatypeConverter.parseBase64Binary("dark side")) ::
+      Nil
   )
 
   describe("The request API") {
@@ -105,6 +80,7 @@ class suiteRequests extends invoicingSuite {
 
     it("should be able to make a call to manage-invoice,") {
       testManageInvoice(invoices)
+      testManageInvoice(Invoices(smartInvoices))
     }
     it(
       "should not be able to make a call to query-transaction-state with invalid transaction ID,"
@@ -129,9 +105,9 @@ class suiteRequests extends invoicingSuite {
 
       response match {
         case Success(response) =>
-          response.processingResults.isEmpty should be(true)
-          response.result.errorCode should be(None)
-          response.result.message should be(None)
+          response.processingResults.isEmpty shouldEqual true
+          response.result.errorCode shouldEqual None
+          response.result.message shouldEqual None
         case Failure(exception) =>
           logException(exception)
       }
