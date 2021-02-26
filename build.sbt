@@ -7,7 +7,7 @@ import sbtrelease.ReleasePlugin.autoImport.{releaseProcess, releaseVersionBump}
 lazy val commonSettings = Seq(
   organizationName := "Enliven Systems Kft.",
   organization := "systems.enliven.invoicing.hungarian",
-  scalaVersion := "2.12.12",
+  scalaVersion := "2.12.13",
   semanticdbEnabled := true,
   semanticdbVersion := scalafixSemanticdb.revision,
   addCompilerPlugin(scalafixSemanticdb),
