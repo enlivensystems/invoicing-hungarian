@@ -14,7 +14,7 @@ object Dependencies {
     "com.typesafe.akka" %% "akka-http" % "10.2.4",
     "com.typesafe.akka" %% "akka-slf4j" % "2.6.13",
     "com.typesafe.akka" %% "akka-actor-typed" % "2.6.13",
-    "org.apache.commons" % "commons-lang3" % "3.11",
+    "org.apache.commons" % "commons-lang3" % "3.12.0",
     "org.scala-lang.modules" %% "scala-xml" % "1.3.0",
     "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2",
     "net.databinder.dispatch" %% "dispatch-core" % "0.13.4",
