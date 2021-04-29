@@ -66,7 +66,7 @@ class suiteRequests extends invoicingSuite {
   describe("The request API") {
     def testManageInvoice(invoices: Invoices) =
       eventually {
-        val response = invoicing.invoices(invoices, 10.seconds)(10.seconds)
+        val response = invoicing.invoices(invoices, entity, 10.seconds)(10.seconds)
 
         response match {
           case Success(response) =>
@@ -86,7 +86,7 @@ class suiteRequests extends invoicingSuite {
       "should not be able to make a call to query-transaction-state with invalid transaction ID,"
     ) {
       val response =
-        invoicing.status(RandomStringUtils.randomAlphanumeric(32), 10.seconds)(10.seconds)
+        invoicing.status(RandomStringUtils.randomAlphanumeric(32), entity, 10.seconds)(10.seconds)
 
       response match {
         case Success(_) =>
@@ -101,7 +101,7 @@ class suiteRequests extends invoicingSuite {
         "valid but non-existent transaction ID,"
     ) {
       val response =
-        invoicing.status(RandomStringUtils.randomAlphanumeric(30), 10.seconds)(10.seconds)
+        invoicing.status(RandomStringUtils.randomAlphanumeric(30), entity, 10.seconds)(10.seconds)
 
       response match {
         case Success(response) =>
@@ -126,7 +126,9 @@ class suiteRequests extends invoicingSuite {
         }
 
         val response =
-          invoicing.status(transactionID, returnOriginalRequest = true, 10.seconds)(10.seconds)
+          invoicing.status(transactionID, entity, returnOriginalRequest = true, 10.seconds)(
+            10.seconds
+          )
 
         response match {
           case Success(response) =>
@@ -155,7 +157,7 @@ class suiteRequests extends invoicingSuite {
       val completed: AtomicInteger = new AtomicInteger(0)
       (1 to testCount).par
         .map(
-          _ => invoicing.invoices(invoices)(40.seconds)
+          _ => invoicing.invoices(invoices, entity)(40.seconds)
         )
         .foreach(_.onComplete {
           case Success(_) =>

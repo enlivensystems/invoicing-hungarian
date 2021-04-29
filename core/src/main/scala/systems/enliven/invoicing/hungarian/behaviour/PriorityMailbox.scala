@@ -8,8 +8,8 @@ import systems.enliven.invoicing.hungarian.behaviour.Connection.Protocol
 class PriorityMailbox(settings: Settings, config: Config)
  extends UnboundedStablePriorityMailbox(
    PriorityGenerator {
-     case Protocol.PriorityManageInvoice(_, _) => 0
-     case Protocol.ManageInvoice(_, _)         => 1
-     case _                                    => 2
+     case _: Protocol.PriorityManageInvoice => 0
+     case _: Protocol.ManageInvoice         => 1
+     case _                                 => 2
    }
  )

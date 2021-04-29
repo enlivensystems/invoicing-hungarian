@@ -1,10 +1,11 @@
 package systems.enliven.invoicing.hungarian.behaviour
 
 import akka.actor.Scheduler
-import akka.actor.typed.scaladsl.{ActorContext, Behaviors, TimerScheduler}
+import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior, DispatcherSelector}
 import akka.pattern.retry
 import systems.enliven.invoicing.hungarian.api.Api.Protocol.Request.Invoices
+import systems.enliven.invoicing.hungarian.api.data.NavEntity
 import systems.enliven.invoicing.hungarian.api.{Api, Token}
 import systems.enliven.invoicing.hungarian.behaviour.Connection.Protocol
 import systems.enliven.invoicing.hungarian.core.{Configuration, Logger}
@@ -22,10 +23,7 @@ object Connection {
 
   def apply(configuration: Configuration): Behavior[Protocol.Command] =
     Behaviors.setup[Protocol.Message] {
-      context =>
-        Behaviors.withTimers {
-          timers => new Connection(configuration, timers, context).initState
-        }
+      context => new Connection(configuration, context).initState
     }.narrow
 
   object Protocol {
@@ -36,12 +34,14 @@ object Connection {
     final case class QueryTransactionStatus(
       replyTo: ActorRef[Try[QueryTransactionStatusResponse]],
       transactionID: String,
+      entity: NavEntity,
       returnOriginalRequest: Boolean = false)
      extends Command
 
     final case class ManageInvoice(
       replyTo: ActorRef[Try[ManageInvoiceResponse]],
-      invoices: Invoices)
+      invoices: Invoices,
+      entity: NavEntity)
      extends Command
 
     final case class PriorityManageInvoice(
@@ -49,19 +49,13 @@ object Connection {
       manageInvoice: ManageInvoice)
      extends PrivateCommand
 
-    final case class PreloadToken() extends PrivateCommand
-
-    final case class PreloadedToken(token: Token) extends PrivateCommand
     final case class TokenLoadFailed(throwable: Throwable) extends PrivateCommand
   }
-
-  final private case object TimerKey
 
 }
 
 class Connection private (
   configuration: Configuration,
-  timers: TimerScheduler[Protocol.Message],
   context: ActorContext[Protocol.Message])
  extends Logger {
 
@@ -78,49 +72,35 @@ class Connection private (
   private val api =
     new Api()(configuration, context.system.classicSystem, context.executionContext)
 
-  /**
-    * According to the API documentation "single-use data reporting token".
-    */
-  private var preloadedToken: Option[Token] = None
-
-  private def initState: Behavior[Protocol.Message] = {
-    timers.startSingleTimer(Connection.TimerKey, Protocol.PreloadToken(), 100.milliseconds)
-
+  private def initState: Behavior[Protocol.Message] =
     Behaviors.receiveMessage {
-      case Protocol.QueryTransactionStatus(replyTo, transactionID, returnOriginalRequest) =>
+      case Protocol.QueryTransactionStatus(replyTo, transactionID, entity, returnOriginalRequest) =>
         log.trace(
           "Received [query-transaction-status] request with transaction ID [{}].",
           transactionID
         )
-        queryTransactionStatus(replyTo, transactionID, returnOriginalRequest)
+        queryTransactionStatus(replyTo, transactionID, entity, returnOriginalRequest)
         Behaviors.same
-      case Protocol.ManageInvoice(replyTo, invoices) =>
+      case Protocol.ManageInvoice(replyTo, invoices, entity) =>
         log.trace("Received [manage-invoice] request.")
 
-        preloadedToken match {
-          case Some(token: Token) =>
-            context.self ! Protocol.PriorityManageInvoice(
-              token,
-              Protocol.ManageInvoice(replyTo, invoices)
+        context.pipeToSelf(refreshToken(entity)) {
+          case Success(response: TokenExchangeResponse) =>
+            Protocol.PriorityManageInvoice(
+              new Token(response, entity.credentials.exchangeKey),
+              Protocol.ManageInvoice(replyTo, invoices, entity)
             )
-            preloadedToken = None
-            timers.startSingleTimer(Connection.TimerKey, Protocol.PreloadToken(), 30.seconds)
-          case None =>
-            log.trace("Requesting new token.")
-            context.pipeToSelf(refreshToken()) {
-              case Success(response: TokenExchangeResponse) =>
-                Protocol.PriorityManageInvoice(
-                  new Token(response, api.getExchangeKey),
-                  Protocol.ManageInvoice(replyTo, invoices)
-                )
-              case Failure(throwable: Throwable) => Protocol.TokenLoadFailed(throwable)
-            }
+          case Failure(throwable: Throwable) => Protocol.TokenLoadFailed(throwable)
         }
+
         Behaviors.same
-      case Protocol.PriorityManageInvoice(token, Protocol.ManageInvoice(replyTo, invoices)) =>
+      case Protocol.PriorityManageInvoice(
+            token,
+            Protocol.ManageInvoice(replyTo, entity, invoices)
+          ) =>
         log.trace("Running [manage-invoice] with token [{}].", token.value)
 
-        manageInvoice(invoices)(token).onComplete {
+        manageInvoice(invoices, entity)(token).onComplete {
           case Success(response: Try[ManageInvoiceResponse]) =>
             log.trace("Finish Invoice.")
             replyTo ! response
@@ -129,37 +109,19 @@ class Connection private (
             replyTo ! Failure(throwable)
         }
         Behaviors.same
-      case Protocol.PreloadToken() =>
-        log.trace("Preloading token.")
-
-        context.pipeToSelf(refreshToken()) {
-          case Success(response: TokenExchangeResponse) =>
-            Protocol.PreloadedToken(new Token(response, api.getExchangeKey))
-          case Failure(throwable: Throwable) => Protocol.TokenLoadFailed(throwable)
-        }
-        Behaviors.same
-      case Protocol.PreloadedToken(token) =>
-        preloadedToken = Some(token)
-        log.trace("Token [{}] preloaded.", preloadedToken.get.value)
-        timers.startSingleTimer(
-          Connection.TimerKey,
-          Protocol.PreloadToken(),
-          4.minutes + 30.seconds
-        )
-        Behaviors.same
       case Protocol.TokenLoadFailed(_) =>
         Behaviors.same
       case _ =>
         Behaviors.unhandled
     }
-  }
 
   private def queryTransactionStatus(
     replyTo: ActorRef[Try[QueryTransactionStatusResponse]],
     transactionID: String,
+    entity: NavEntity,
     returnOriginalRequest: Boolean
   ): Unit =
-    api.queryTransactionStatus(transactionID, returnOriginalRequest).onComplete {
+    api.queryTransactionStatus(transactionID, entity, returnOriginalRequest).onComplete {
       case Success(value) =>
         log.debug(
           "Finished with [query-transaction-status] for transaction ID [{}].",
@@ -174,10 +136,10 @@ class Connection private (
         )
     }
 
-  private def manageInvoice(invoices: Invoices)(
+  private def manageInvoice(entity: NavEntity, invoices: Invoices)(
     implicit token: Token
   ): Future[Try[ManageInvoiceResponse]] =
-    api.manageInvoice(invoices.toRequest)
+    api.manageInvoice(entity, invoices.toRequest)
       .flatMap {
         result: Try[ManageInvoiceResponse] =>
           log.trace("Request [manage-invoice] finished.")
@@ -193,9 +155,9 @@ class Connection private (
           Future.failed[Try[ManageInvoiceResponse]](throwable)
       }
 
-  private def refreshToken(): Future[TokenExchangeResponse] =
+  private def refreshToken(entity: NavEntity): Future[TokenExchangeResponse] =
     retry(
-      () => api.tokenExchange(),
+      () => api.tokenExchange(entity),
       maxRetry,
       attempted => Option(200.milliseconds * attempted)
     ).flatMap {

@@ -1,12 +1,13 @@
 package systems.enliven.invoicing.hungarian
 
+import org.scalatest.CancelAfterFailure
 import org.scalatest.concurrent.Eventually
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Seconds, Span}
 import systems.enliven.invoicing.hungarian.core.{Configuration, Logger}
 
-class baseSuite extends AnyFunSpec with Matchers with Logger {
+class baseSuite extends AnyFunSpec with Matchers with CancelAfterFailure with Logger {
 
   implicit protected val configuration: Configuration = new Configuration()
 

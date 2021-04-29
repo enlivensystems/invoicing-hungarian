@@ -1,8 +1,8 @@
 package systems.enliven.invoicing.hungarian
 
 import java.time.Instant
-
 import scalaxb.Base64Binary
+import systems.enliven.invoicing.hungarian.api.data.NavEntity
 import systems.enliven.invoicing.hungarian.api.{Api, Hash}
 import systems.enliven.invoicing.hungarian.generated.{
   CREATE,
@@ -13,16 +13,16 @@ import systems.enliven.invoicing.hungarian.generated.{
 
 class suiteSignature extends invoicingSuite {
 
+  override protected val entity: NavEntity =
+    NavEntity.create(Some("ce-8f5e-215119fa7dd621DLMRHRLH2S"))
+
   protected val api: Api =
-    new Api(Some("ce-8f5e-215119fa7dd621DLMRHRLH2S"))(
-      configuration,
-      invoicing.classicSystem,
-      invoicing.executionContext
-    )
+    new Api()(configuration, invoicing.classicSystem, invoicing.executionContext)
 
   describe("The requests API") {
     it("should be able to correctly generate a signature.") {
       api.builder.buildRequestSignature(
+        entity,
         "TSTKFT1222564",
         Instant.parse("2017-12-30T18:25:45.000Z"),
         InvoiceOperationListType(

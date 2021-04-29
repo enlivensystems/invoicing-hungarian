@@ -6,7 +6,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.Accept
 import akka.util.ByteString
 import scalaxb.{Base64Binary, DataRecord, XMLFormat}
-import systems.enliven.invoicing.hungarian.api.data.{Issuer, Item}
+import systems.enliven.invoicing.hungarian.api.data.{Issuer, Item, NavEntity}
 import systems.enliven.invoicing.hungarian.api.recipient.Recipient
 import systems.enliven.invoicing.hungarian.core
 import systems.enliven.invoicing.hungarian.core.{Configuration, Logger}
@@ -51,7 +51,7 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.reflect.ClassTag
 import scala.util.Try
 
-class Api(signingKeyOverride: Option[String] = None)(
+class Api()(
   implicit configuration: Configuration,
   actorSystem: ActorSystem,
   ec: ExecutionContextExecutor)
@@ -69,13 +69,12 @@ class Api(signingKeyOverride: Option[String] = None)(
       apiData.software.developer.taxNumber
     )
 
-  private val apiData: Data = Data(signingKeyOverride)(configuration)
-  private[hungarian] val builder: RequestBuilder = new RequestBuilder(apiData)
-
-  def getExchangeKey: String = apiData.auth.exchangeKey
+  private val apiData: Data = Data()
+  private[hungarian] val builder: RequestBuilder = new RequestBuilder()
 
   def queryTransactionStatus(
     transactionID: String,
+    entity: NavEntity,
     returnOriginalRequest: Boolean = false
   ): Future[Try[QueryTransactionStatusResponse]] = {
     val timestamp = Instant.now()
@@ -83,7 +82,7 @@ class Api(signingKeyOverride: Option[String] = None)(
 
     val payload = QueryTransactionStatusRequest(
       builder.buildBasicHeader(requestID, timestamp),
-      builder.buildUserHeader(requestID, timestamp),
+      builder.buildUserHeader(requestID, timestamp, entity),
       buildSoftware,
       transactionID,
       Some(returnOriginalRequest)
@@ -104,7 +103,7 @@ class Api(signingKeyOverride: Option[String] = None)(
       }
   }
 
-  def manageInvoice(invoiceOperations: InvoiceOperationListType)(
+  def manageInvoice(entity: NavEntity, invoiceOperations: InvoiceOperationListType)(
     implicit token: Token
   ): Future[Try[ManageInvoiceResponse]] = {
     val timestamp = Instant.now()
@@ -112,7 +111,7 @@ class Api(signingKeyOverride: Option[String] = None)(
 
     val payload = ManageInvoiceRequest(
       builder.buildBasicHeader(requestID, timestamp),
-      builder.buildUserHeader(requestID, timestamp, invoiceOperations)(
+      builder.buildUserHeader(entity, requestID, timestamp, invoiceOperations)(
         Hash.InvoiceOperationListHash
       ),
       buildSoftware,
@@ -135,13 +134,13 @@ class Api(signingKeyOverride: Option[String] = None)(
       }
   }
 
-  private[hungarian] def tokenExchange(): Future[Try[TokenExchangeResponse]] = {
+  private[hungarian] def tokenExchange(entity: NavEntity): Future[Try[TokenExchangeResponse]] = {
     val timestamp: Instant = Instant.now()
     val requestID: String = builder.nextRequestID
 
     val payload = TokenExchangeRequest(
       header = builder.buildBasicHeader(requestID, timestamp),
-      user = builder.buildUserHeader(requestID, timestamp),
+      user = builder.buildUserHeader(requestID, timestamp, entity),
       software = buildSoftware
     )
 
