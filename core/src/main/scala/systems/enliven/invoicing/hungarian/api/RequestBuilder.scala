@@ -3,6 +3,7 @@ package systems.enliven.invoicing.hungarian.api
 import org.apache.commons.lang3.RandomStringUtils
 import scalaxb.DataRecord
 import scalaxb.DataRecord.__StringXMLFormat
+import systems.enliven.invoicing.hungarian.api.data.NavEntity
 import systems.enliven.invoicing.hungarian.core.Logger
 import systems.enliven.invoicing.hungarian.generated.{
   BasicHeaderType,
@@ -16,8 +17,7 @@ import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId}
 import javax.xml.datatype.DatatypeFactory
 
-class RequestBuilder(apiData: Data) extends Logger {
-  private val passwordHash: String = Hash.hashSHA512(apiData.auth.password)
+class RequestBuilder() extends Logger {
 
   def nextRequestID: String = RandomStringUtils.randomAlphanumeric(30)
 
@@ -31,41 +31,65 @@ class RequestBuilder(apiData: Data) extends Logger {
       Some(Number1u460.toString)
     )
 
-  def buildUserHeader[T : Hash](requestID: String, timestamp: Instant, payload: T): UserHeaderType =
+  def buildUserHeader[T : Hash](
+    entity: NavEntity,
+    requestID: String,
+    timestamp: Instant,
+    payload: T
+  ): UserHeaderType =
     UserHeaderType(
-      apiData.auth.login,
-      CryptoType(passwordHash, Map("@cryptoType" -> DataRecord[String](None, None, "SHA-512"))),
-      apiData.entity.taxNumber,
+      entity.credentials.login,
       CryptoType(
-        buildRequestSignature(requestID, timestamp, payload),
+        Hash.hashSHA512(entity.credentials.password),
+        Map("@cryptoType" -> DataRecord[String](None, None, "SHA-512"))
+      ),
+      entity.taxNumber,
+      CryptoType(
+        buildRequestSignature(entity, requestID, timestamp, payload),
         Map("@cryptoType" -> DataRecord[String](None, None, "SHA3-512"))
       )
     )
 
-  def buildRequestSignature[T : Hash](requestID: String, timestamp: Instant, payload: T): String =
+  def buildRequestSignature[T : Hash](
+    entity: NavEntity,
+    requestID: String,
+    timestamp: Instant,
+    payload: T
+  ): String =
     Hash.hashSHA3512 {
       requestID +
         RequestBuilder.signatureDateFormatter.format(timestamp) +
-        apiData.auth.signingKey +
+        entity.credentials.signingKey +
         implicitly[Hash[T]].hashed(payload)
     }
 
-  def buildUserHeader(requestID: String, timestamp: Instant): UserHeaderType =
+  def buildUserHeader(
+    requestID: String,
+    timestamp: Instant,
+    entity: NavEntity
+  ): UserHeaderType =
     UserHeaderType(
-      apiData.auth.login,
-      CryptoType(passwordHash, Map("@cryptoType" -> DataRecord[String](None, None, "SHA-512"))),
-      apiData.entity.taxNumber,
+      entity.credentials.login,
       CryptoType(
-        buildRequestSignature(requestID, timestamp),
+        Hash.hashSHA512(entity.credentials.password),
+        Map("@cryptoType" -> DataRecord[String](None, None, "SHA-512"))
+      ),
+      entity.taxNumber,
+      CryptoType(
+        buildRequestSignature(entity, requestID, timestamp),
         Map("@cryptoType" -> DataRecord[String](None, None, "SHA3-512"))
       )
     )
 
-  def buildRequestSignature(requestID: String, timestamp: Instant): String =
+  def buildRequestSignature(
+    entity: NavEntity,
+    requestID: String,
+    timestamp: Instant
+  ): String =
     Hash.hashSHA3512 {
       requestID +
         RequestBuilder.signatureDateFormatter.format(timestamp) +
-        apiData.auth.signingKey
+        entity.credentials.signingKey
     }
 
 }

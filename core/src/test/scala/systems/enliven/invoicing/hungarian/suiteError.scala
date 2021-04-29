@@ -11,12 +11,14 @@ class suiteError extends invoicingSuite {
   val invoice: Invoices.Invoice =
     Invoices.Raw(Invoices.Operation.storno, DatatypeConverter.parseBase64Binary("something"))
 
-  val validInvoices = (1 to 100).map(_ => invoice)
+  val validInvoices = (1 to 100).map(
+    _ => invoice
+  )
 
   describe("The request API") {
 
     it("should not be able to manage 0 invoices,") {
-      val response = invoicing.invoices(Invoices(Nil), 10.seconds)(10.seconds)
+      val response = invoicing.invoices(Invoices(Nil), entity, 10.seconds)(10.seconds)
 
       response match {
         case Success(_) => fail
@@ -32,7 +34,7 @@ class suiteError extends invoicingSuite {
     }
 
     it("should be able to manage 100 invoices,") {
-      val response = invoicing.invoices(Invoices(validInvoices), 10.seconds)(10.seconds)
+      val response = invoicing.invoices(Invoices(validInvoices), entity, 10.seconds)(10.seconds)
 
       response match {
         case Success(response) =>
@@ -50,7 +52,8 @@ class suiteError extends invoicingSuite {
     }
 
     it("should not be able to manage 101 invoices,") {
-      val response = invoicing.invoices(Invoices(validInvoices :+ invoice), 10.seconds)(10.seconds)
+      val response =
+        invoicing.invoices(Invoices(validInvoices :+ invoice), entity, 10.seconds)(10.seconds)
 
       response match {
         case Success(_) => fail

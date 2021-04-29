@@ -5,6 +5,7 @@ import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import systems.enliven.invoicing.hungarian.api.Api.Protocol.Request.Invoices
+import systems.enliven.invoicing.hungarian.api.data.NavEntity
 import systems.enliven.invoicing.hungarian.behaviour.{Connection, Guardian}
 import systems.enliven.invoicing.hungarian.core.{Configuration, Logger}
 import systems.enliven.invoicing.hungarian.generated.{
@@ -61,57 +62,67 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
     connection = Some(Await.result(connect(), Duration.Inf).pool)
   }
 
-  def invoices(invoices: Invoices, timeout: FiniteDuration)(
+  def invoices(invoices: Invoices, entity: NavEntity, timeout: FiniteDuration)(
     implicit askTimeout: Timeout
   ): Try[ManageInvoiceResponse] =
     Await.result(
       connection.get.ask[Try[ManageInvoiceResponse]](
-        replyTo => Connection.Protocol.ManageInvoice(replyTo, invoices)
+        replyTo => Connection.Protocol.ManageInvoice(replyTo, invoices, entity)
       ),
       timeout
     )
 
-  def invoices(invoices: Invoices)(
+  def invoices(invoices: Invoices, entity: NavEntity)(
     implicit askTimeout: Timeout,
     maxRetry: Int = 10,
     baseDelay: FiniteDuration = 100.milliseconds
   ): Future[Try[ManageInvoiceResponse]] =
     retry.Backoff(maxRetry, baseDelay).apply {
       connection.get.ask[Try[ManageInvoiceResponse]](
-        replyTo => Connection.Protocol.ManageInvoice(replyTo, invoices)
+        replyTo => Connection.Protocol.ManageInvoice(replyTo, invoices, entity)
       )
     }(retry.Success.always, typedSystem.executionContext)
 
   def status(
     transactionID: String,
+    entity: NavEntity,
     timeout: FiniteDuration
   )(implicit askTimeout: Timeout): Try[QueryTransactionStatusResponse] =
-    status(transactionID, returnOriginalRequest = false, timeout)(askTimeout)
+    status(transactionID, entity, returnOriginalRequest = false, timeout)(askTimeout)
 
   def status(
     transactionID: String,
+    entity: NavEntity,
     returnOriginalRequest: Boolean = false,
     timeout: FiniteDuration
   )(implicit askTimeout: Timeout): Try[QueryTransactionStatusResponse] =
     Await.result(
       connection.get.ask[Try[QueryTransactionStatusResponse]](
         replyTo =>
-          Connection.Protocol.QueryTransactionStatus(replyTo, transactionID, returnOriginalRequest)
+          Connection.Protocol.QueryTransactionStatus(
+            replyTo,
+            transactionID,
+            entity,
+            returnOriginalRequest
+          )
       ),
       timeout
     )
 
-  def status(transactionID: String)(implicit
-  askTimeout: Timeout): Future[Try[QueryTransactionStatusResponse]] =
-    status(transactionID, returnOriginalRequest = false)(askTimeout)
+  def status(transactionID: String, entity: NavEntity)(
+    implicit askTimeout: Timeout
+  ): Future[Try[QueryTransactionStatusResponse]] =
+    status(transactionID, entity, returnOriginalRequest = false)(askTimeout)
 
-  def status(transactionID: String, returnOriginalRequest: Boolean)(implicit
-  askTimeout: Timeout): Future[Try[QueryTransactionStatusResponse]] =
+  def status(transactionID: String, entity: NavEntity, returnOriginalRequest: Boolean)(
+    implicit askTimeout: Timeout
+  ): Future[Try[QueryTransactionStatusResponse]] =
     connection.get.ask[Try[QueryTransactionStatusResponse]](
       replyTo =>
         Connection.Protocol.QueryTransactionStatus(
           replyTo,
           transactionID,
+          entity,
           returnOriginalRequest
         )
     )
