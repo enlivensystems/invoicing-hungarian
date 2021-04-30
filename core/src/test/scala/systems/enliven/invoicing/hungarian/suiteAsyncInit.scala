@@ -1,8 +1,8 @@
 package systems.enliven.invoicing.hungarian
 
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.funspec.AnyFunSpec
 
-class suiteAsyncInit extends baseSuite with BeforeAndAfterAll {
+class suiteAsyncInit extends AnyFunSpec with baseSuite {
 
   private val invoicing: Invoicing = new Invoicing()
 

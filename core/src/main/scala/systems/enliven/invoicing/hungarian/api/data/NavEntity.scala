@@ -17,18 +17,28 @@ object NavEntity {
       taxNumber = taxNumber
     )
 
-  def create(signingKeyOverride: Option[String] = None)(
+  def create(
+    signingKeyOverride: Option[String] = None,
+    exchangeKeyOverride: Option[String] = None,
+    loginOverride: Option[String] = None,
+    passwordOverride: Option[String] = None,
+    taxNumberOverride: Option[String] = None
+  )(
     implicit configuration: Configuration
   ): NavEntity =
     NavEntity(
       credentials = Credentials(
         signingKey = signingKeyOverride
           .getOrElse(configuration.get[String]("invoicing-hungarian.authentication.signing-key")),
-        exchangeKey = configuration.get[String]("invoicing-hungarian.authentication.exchange-key"),
-        login = configuration.get[String]("invoicing-hungarian.authentication.login"),
-        password = configuration.get[String]("invoicing-hungarian.authentication.password")
+        exchangeKey = exchangeKeyOverride
+          .getOrElse(configuration.get[String]("invoicing-hungarian.authentication.exchange-key")),
+        login = loginOverride
+          .getOrElse(configuration.get[String]("invoicing-hungarian.authentication.login")),
+        password = passwordOverride
+          .getOrElse(configuration.get[String]("invoicing-hungarian.authentication.password"))
       ),
-      taxNumber = configuration.get[String]("invoicing-hungarian.entity.tax-number")
+      taxNumber = taxNumberOverride
+        .getOrElse(configuration.get[String]("invoicing-hungarian.entity.tax-number"))
     )
 
   case class Credentials(

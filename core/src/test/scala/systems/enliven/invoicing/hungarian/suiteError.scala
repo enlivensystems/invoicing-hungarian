@@ -1,12 +1,14 @@
 package systems.enliven.invoicing.hungarian
 
+import org.scalatest.funspec.AnyFunSpec
+
 import javax.xml.bind.DatatypeConverter
 import systems.enliven.invoicing.hungarian.api.Api.Protocol.Request.Invoices
 
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
-class suiteError extends invoicingSuite {
+class suiteError extends AnyFunSpec with invoicingSuite {
 
   val invoice: Invoices.Invoice =
     Invoices.Raw(Invoices.Operation.storno, DatatypeConverter.parseBase64Binary("something"))

@@ -1,6 +1,7 @@
 package systems.enliven.invoicing.hungarian
 
 import org.apache.commons.lang3.RandomStringUtils
+import org.scalatest.funspec.AnyFunSpec
 import systems.enliven.invoicing.hungarian.api.Api.Protocol.Request.Invoices
 import systems.enliven.invoicing.hungarian.api.data.{Address, Issuer, Item}
 import systems.enliven.invoicing.hungarian.api.recipient.Recipient
@@ -11,7 +12,7 @@ import javax.xml.bind.DatatypeConverter
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
-class suiteRequests extends invoicingSuite {
+class suiteRequests extends AnyFunSpec with invoicingSuite {
 
   val smartInvoices: Seq[Invoices.Invoice] = {
     TestDataGenerator.testRecipients.map {

@@ -1,8 +1,9 @@
 package systems.enliven.invoicing.hungarian
 
+import org.scalatest.funspec.AnyFunSpec
 import systems.enliven.invoicing.hungarian.api.Hash
 
-class suiteHashers extends baseSuite {
+class suiteHashers extends AnyFunSpec with baseSuite {
   describe("The hashers") {
     it("should be able to correctly hash SHA-512") {
       (1 to 10).foreach {

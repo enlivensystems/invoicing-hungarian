@@ -8,6 +8,7 @@ import systems.enliven.invoicing.hungarian.api.Api.Protocol.Request.Invoices
 import systems.enliven.invoicing.hungarian.api.data.NavEntity
 import systems.enliven.invoicing.hungarian.api.{Api, Token}
 import systems.enliven.invoicing.hungarian.behaviour.Connection.Protocol
+import systems.enliven.invoicing.hungarian.core
 import systems.enliven.invoicing.hungarian.core.{Configuration, Logger}
 import systems.enliven.invoicing.hungarian.generated.{
   ManageInvoiceResponse,
@@ -21,6 +22,10 @@ import scala.util.{Failure, Success, Try}
 
 object Connection {
 
+  protected val invalidRequestSignature: String = """ERROR \[INVALID_REQUEST_SIGNATURE].*"""
+  protected val invalidSecurityUser: String = """ERROR \[INVALID_SECURITY_USER].*"""
+  protected val notRegisteredCustomer: String = """ERROR \[NOT_REGISTERED_CUSTOMER].*"""
+
   def apply(configuration: Configuration): Behavior[Protocol.Command] =
     Behaviors.setup[Protocol.Message] {
       context => new Connection(configuration, context).initState
@@ -30,6 +35,12 @@ object Connection {
     sealed trait Message
     sealed trait Command extends Message
     sealed trait PrivateCommand extends Message
+
+    final case class ValidateEntity(
+      replyTo: ActorRef[Try[Unit]],
+      entity: NavEntity
+    )
+     extends Command
 
     final case class QueryTransactionStatus(
       replyTo: ActorRef[Try[QueryTransactionStatusResponse]],
@@ -74,12 +85,60 @@ class Connection private (
 
   private def initState: Behavior[Protocol.Message] =
     Behaviors.receiveMessage {
+      case Protocol.ValidateEntity(replyTo, entity) =>
+        log.trace("Received [validate-entity] request.")
+
+        refreshToken(entity).map(
+          response => new Token(response, entity.credentials.exchangeKey)
+        ).onComplete {
+          case Success(_) =>
+            log.trace("Successfully validated entity!")
+            replyTo ! scala.util.Success((): Unit)
+          case Failure(throwable) =>
+            log.trace("Entity validation failed!")
+            val message = throwable.getMessage
+            replyTo ! scala.util.Failure(
+              throwable match {
+                case _: java.security.InvalidKeyException =>
+                  core.Exception.InvalidExchangeKey(message)
+                case _: javax.crypto.BadPaddingException =>
+                  core.Exception.InvalidExchangeKey(message)
+                case _: core.Exception if message.matches(Connection.invalidRequestSignature) =>
+                  core.Exception.InvalidRequestSignature(message)
+                case _: core.Exception if message.matches(Connection.invalidSecurityUser) =>
+                  core.Exception.InvalidSecurityUser(message)
+                case _: core.Exception if message.matches(Connection.notRegisteredCustomer) =>
+                  core.Exception.NotRegisteredCustomer(message)
+                case _ =>
+                  throwable
+              }
+            )
+        }
+
+        Behaviors.same
       case Protocol.QueryTransactionStatus(replyTo, transactionID, entity, returnOriginalRequest) =>
         log.trace(
           "Received [query-transaction-status] request with transaction ID [{}].",
           transactionID
         )
-        queryTransactionStatus(replyTo, transactionID, entity, returnOriginalRequest)
+
+        api.queryTransactionStatus(transactionID, entity, returnOriginalRequest).onComplete {
+          case Success(value) =>
+            log.debug(
+              "Finished [query-transaction-status] request with transaction ID [{}].",
+              transactionID
+            )
+            replyTo ! value
+          case Failure(exception) =>
+            log.error(
+              "Failed [query-transaction-status] request with transaction ID [{}] " +
+                "due to [{}] with message [{}]!",
+              transactionID,
+              exception.getClass.getName,
+              exception.getMessage
+            )
+        }
+
         Behaviors.same
       case Protocol.ManageInvoice(replyTo, invoices, entity) =>
         log.trace("Received [manage-invoice] request.")
@@ -115,27 +174,6 @@ class Connection private (
         Behaviors.unhandled
     }
 
-  private def queryTransactionStatus(
-    replyTo: ActorRef[Try[QueryTransactionStatusResponse]],
-    transactionID: String,
-    entity: NavEntity,
-    returnOriginalRequest: Boolean
-  ): Unit =
-    api.queryTransactionStatus(transactionID, entity, returnOriginalRequest).onComplete {
-      case Success(value) =>
-        log.debug(
-          "Finished with [query-transaction-status] for transaction ID [{}].",
-          transactionID
-        )
-        replyTo ! value
-      case Failure(exception) =>
-        log.error(
-          "Could not manage invoice due to [{}] with message [{}]!",
-          exception.getClass.getName,
-          exception.getMessage
-        )
-    }
-
   private def manageInvoice(entity: NavEntity, invoices: Invoices)(
     implicit token: Token
   ): Future[Try[ManageInvoiceResponse]] =
@@ -160,16 +198,7 @@ class Connection private (
       () => api.tokenExchange(entity),
       maxRetry,
       attempted => Option(200.milliseconds * attempted)
-    ).flatMap {
-      case Success(response) => Future.successful[TokenExchangeResponse](response)
-      case Failure(throwable: Throwable) =>
-        log.error(
-          "Could not refresh exchange token due to [{}] with message [{}]!",
-          throwable.getClass.getSimpleName,
-          throwable.getMessage
-        )
-        Future.failed[TokenExchangeResponse](throwable)
-    }.recoverWith {
+    ).flatMap(Future.fromTry).recoverWith {
       case throwable: Throwable =>
         log.error(
           "Could not refresh exchange token due to [{}] with message [{}]!",

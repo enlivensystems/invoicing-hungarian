@@ -1,9 +1,10 @@
 package systems.enliven.invoicing.hungarian
 
+import org.scalatest.funspec.AnyFunSpec
+
 import java.io.{FileInputStream, InputStream}
 import java.nio.file.{FileSystems, Files, Paths}
 import java.util.Collections
-
 import scalaxb.XMLFormat
 import systems.enliven.invoicing.hungarian.generated.{
   InvoiceData,
@@ -23,7 +24,7 @@ import scala.collection.JavaConverters._
 import scala.io.Source
 import scala.xml.Node
 
-class suiteSerialization extends baseSuite {
+class suiteSerialization extends AnyFunSpec with baseSuite {
   describe("The generated XSD API") {
     def parser[A](implicit format: XMLFormat[A]) =
       (nodeSequence: Node) => scalaxb.fromXML[A](nodeSequence)
@@ -88,7 +89,9 @@ class suiteSerialization extends baseSuite {
             log.info("Found XML on path [{}], creating input stream.", path.toString)
             path
         }
-        .map(path => path.getName -> new FileInputStream(path))
+        .map(
+          path => path.getName -> new FileInputStream(path)
+        )
         .toList
     }
   }

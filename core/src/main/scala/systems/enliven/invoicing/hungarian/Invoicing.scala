@@ -83,37 +83,6 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
       )
     }(retry.Success.always, typedSystem.executionContext)
 
-  def status(
-    transactionID: String,
-    entity: NavEntity,
-    timeout: FiniteDuration
-  )(implicit askTimeout: Timeout): Try[QueryTransactionStatusResponse] =
-    status(transactionID, entity, returnOriginalRequest = false, timeout)(askTimeout)
-
-  def status(
-    transactionID: String,
-    entity: NavEntity,
-    returnOriginalRequest: Boolean = false,
-    timeout: FiniteDuration
-  )(implicit askTimeout: Timeout): Try[QueryTransactionStatusResponse] =
-    Await.result(
-      connection.get.ask[Try[QueryTransactionStatusResponse]](
-        replyTo =>
-          Connection.Protocol.QueryTransactionStatus(
-            replyTo,
-            transactionID,
-            entity,
-            returnOriginalRequest
-          )
-      ),
-      timeout
-    )
-
-  def status(transactionID: String, entity: NavEntity)(
-    implicit askTimeout: Timeout
-  ): Future[Try[QueryTransactionStatusResponse]] =
-    status(transactionID, entity, returnOriginalRequest = false)(askTimeout)
-
   def status(transactionID: String, entity: NavEntity, returnOriginalRequest: Boolean)(
     implicit askTimeout: Timeout
   ): Future[Try[QueryTransactionStatusResponse]] =
@@ -126,5 +95,37 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
           returnOriginalRequest
         )
     )
+
+  def status(transactionID: String, entity: NavEntity)(
+    implicit askTimeout: Timeout
+  ): Future[Try[QueryTransactionStatusResponse]] =
+    status(transactionID, entity, returnOriginalRequest = false)(askTimeout)
+
+  def status(
+    transactionID: String,
+    entity: NavEntity,
+    returnOriginalRequest: Boolean,
+    timeout: FiniteDuration
+  )(implicit askTimeout: Timeout): Try[QueryTransactionStatusResponse] =
+    Await.result(
+      status(transactionID, entity, returnOriginalRequest)(askTimeout),
+      timeout
+    )
+
+  def status(
+    transactionID: String,
+    entity: NavEntity,
+    timeout: FiniteDuration
+  )(implicit askTimeout: Timeout): Try[QueryTransactionStatusResponse] =
+    status(transactionID, entity, returnOriginalRequest = false, timeout)(askTimeout)
+
+  def validate(entity: NavEntity)(implicit askTimeout: Timeout): Future[Try[Unit]] =
+    connection.get.ask[Try[Unit]](
+      replyTo => Connection.Protocol.ValidateEntity(replyTo, entity)
+    )
+
+  def validate(entity: NavEntity, timeout: FiniteDuration)(
+    implicit askTimeout: Timeout
+  ): Try[Unit] = Await.result(validate(entity)(askTimeout), timeout)
 
 }
