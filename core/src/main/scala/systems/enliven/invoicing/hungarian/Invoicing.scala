@@ -22,13 +22,20 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
   implicit val typedSystem: ActorSystem[Guardian.Protocol.Command] =
     ActorSystem.create[Guardian.Protocol.Command](
       Guardian.apply(),
-      "guardian",
-      ConfigFactory.load("actor.conf")
+      configuration.get[String]("invoicing-hungarian.actor-system.name"),
+      ConfigFactory.load {
+        import systems.enliven.invoicing.hungarian.core.ConfigLoader.Loader
+        ConfigFactory.empty()
+          .load(
+            ConfigFactory.parseURL(getClass.getResource("/invoicing-hungarian.defaults.conf"))
+          )
+          .load(ConfigFactory.parseURL(getClass.getResource("/invoicing-hungarian.conf")))
+          .getConfig("invoicing-hungarian.akka")
+          .atKey("akka")
+      }
     )
 
   protected var connection: Option[ActorRef[Connection.Protocol.Command]] = None
-
-  def classicSystem: akka.actor.ActorSystem = typedSystem.classicSystem
 
   def init(): Unit = {
     connect().onComplete {
@@ -52,10 +59,10 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
   def isReady: Boolean = connection.isDefined
 
   def awaitShutdown(): Unit = {
-    log.debug("Shutting down actor system...")
+    log.debug("Shutting down [{}] actor system...", typedSystem.name)
     typedSystem ! Guardian.Protocol.Shutdown
     Await.result(typedSystem.whenTerminated, 10.seconds)
-    log.info("Terminated actor system.")
+    log.info("Terminated [{}] actor system.", typedSystem.name)
   }
 
   def awaitInit(): Unit = {

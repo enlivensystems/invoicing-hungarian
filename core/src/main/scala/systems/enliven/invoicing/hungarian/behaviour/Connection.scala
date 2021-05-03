@@ -74,7 +74,7 @@ class Connection private (
 
   implicit private val executionContext: ExecutionContextExecutor =
     context.system.dispatchers.lookup(
-      DispatcherSelector.fromConfig("akka.actor.blocking-dispatcher")
+      DispatcherSelector.fromConfig("akka.actor.invoicing-blocking-dispatcher")
     )
 
   implicit private val scheduler: Scheduler =

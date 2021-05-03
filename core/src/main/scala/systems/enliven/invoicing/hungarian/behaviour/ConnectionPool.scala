@@ -13,7 +13,7 @@ object ConnectionPool {
       Behaviors
         .supervise(Connection.apply(configuration))
         .onFailure[scala.Exception](SupervisorStrategy.restart)
-    }.withRouteeProps(MailboxSelector.fromConfig("akka.actor.priority-dispatcher"))
+    }.withRouteeProps(MailboxSelector.fromConfig("akka.actor.invoicing-priority-dispatcher"))
   }
 
 }
