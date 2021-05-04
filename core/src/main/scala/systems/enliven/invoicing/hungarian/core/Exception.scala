@@ -7,5 +7,5 @@ object Exception {
   case class InvalidExchangeKey(message: String) extends scala.Exception(message)
   case class InvalidSecurityUser(message: String) extends scala.Exception(message)
   case class NotRegisteredCustomer(message: String) extends scala.Exception(message)
-
+  case class InvalidUserRelation(message: String) extends scala.Exception(message)
 }

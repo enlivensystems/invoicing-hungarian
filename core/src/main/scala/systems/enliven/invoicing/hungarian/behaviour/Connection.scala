@@ -25,6 +25,7 @@ object Connection {
   protected val invalidRequestSignature: String = """ERROR \[INVALID_REQUEST_SIGNATURE].*"""
   protected val invalidSecurityUser: String = """ERROR \[INVALID_SECURITY_USER].*"""
   protected val notRegisteredCustomer: String = """ERROR \[NOT_REGISTERED_CUSTOMER].*"""
+  protected val invalidUserRelation: String = """ERROR \[INVALID_USER_RELATION].*"""
 
   def apply(configuration: Configuration): Behavior[Protocol.Command] =
     Behaviors.setup[Protocol.Message] {
@@ -109,6 +110,8 @@ class Connection private (
                   core.Exception.InvalidSecurityUser(message)
                 case _: core.Exception if message.matches(Connection.notRegisteredCustomer) =>
                   core.Exception.NotRegisteredCustomer(message)
+                case _: core.Exception if message.matches(Connection.invalidUserRelation) =>
+                  core.Exception.InvalidUserRelation(message)
                 case _ =>
                   throwable
               }
