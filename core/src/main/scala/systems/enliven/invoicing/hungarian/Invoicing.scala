@@ -5,8 +5,9 @@ import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import systems.enliven.invoicing.hungarian.api.Api.Protocol.Request.Invoices
-import systems.enliven.invoicing.hungarian.api.data.NavEntity
+import systems.enliven.invoicing.hungarian.api.data.{NavEntity, Taxpayer}
 import systems.enliven.invoicing.hungarian.behaviour.{Connection, Guardian}
+import systems.enliven.invoicing.hungarian.core.ConfigLoader.Loader
 import systems.enliven.invoicing.hungarian.core.{Configuration, Logger}
 import systems.enliven.invoicing.hungarian.generated.{
   ManageInvoiceResponse,
@@ -24,7 +25,6 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
       Guardian.apply(),
       configuration.get[String]("invoicing-hungarian.actor-system.name"),
       ConfigFactory.load {
-        import systems.enliven.invoicing.hungarian.core.ConfigLoader.Loader
         ConfigFactory.empty()
           .load(
             ConfigFactory.parseURL(getClass.getResource("/invoicing-hungarian.defaults.conf"))
@@ -134,5 +134,16 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
   def validate(entity: NavEntity, timeout: FiniteDuration)(
     implicit askTimeout: Timeout
   ): Try[Unit] = Await.result(validate(entity)(askTimeout), timeout)
+
+  def queryTaxpayer(taxNumber: String, entity: NavEntity)(
+    implicit askTimeout: Timeout
+  ): Future[Try[Taxpayer]] =
+    connection.get.ask[Try[Taxpayer]](
+      replyTo => Connection.Protocol.QueryTaxpayer(replyTo, taxNumber, entity)
+    )
+
+  def queryTaxpayer(taxNumber: String, entity: NavEntity, timeout: FiniteDuration)(
+    implicit askTimeout: Timeout
+  ): Try[Taxpayer] = Await.result(queryTaxpayer(taxNumber, entity)(askTimeout), timeout)
 
 }

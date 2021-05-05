@@ -8,6 +8,9 @@ trait invoicingSuite extends baseSuite {
 
   protected val entity: NavEntity = createEntity()
 
+  def getTaxNumber(accountKey: String)(implicit configuration: Configuration): String =
+    configuration.get[String](s"invoicing-hungarian.accounts.$accountKey.issuer.tax-number")
+
   def createEntity(
     signingKeyOverride: Option[String] = None,
     exchangeKeyOverride: Option[String] = None,

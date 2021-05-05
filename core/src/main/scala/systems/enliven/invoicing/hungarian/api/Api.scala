@@ -72,6 +72,35 @@ class Api()(
   private val apiData: Data = Data()
   private[hungarian] val builder: RequestBuilder = new RequestBuilder()
 
+  def queryTaxpayer(
+    taxNumber: String,
+    entity: NavEntity
+  ): Future[Try[QueryTaxpayerResponse]] = {
+    val timestamp = Instant.now()
+    val requestID: String = builder.nextRequestID
+
+    val payload = QueryTaxpayerRequest(
+      builder.buildBasicHeader(requestID, timestamp),
+      builder.buildUserHeader(requestID, timestamp, entity),
+      buildSoftware,
+      taxNumber
+    )
+
+    request("queryTaxpayer", Api.writeRequest[QueryTaxpayerRequest](payload))
+      .map {
+        case (status: StatusCode, response: String) =>
+          Try {
+            status match {
+              case StatusCodes.OK =>
+                Api.parse[QueryTaxpayerResponse](response)
+              case _ =>
+                val errorResponse = Api.parse[GeneralErrorResponse](Fixer.fixResponse(response))
+                throw new core.Exception(Api.format(errorResponse))
+            }
+          }
+      }
+  }
+
   def queryTransactionStatus(
     transactionID: String,
     entity: NavEntity,

@@ -1,5 +1,7 @@
 package systems.enliven.invoicing.hungarian.api.data
 
+import systems.enliven.invoicing.hungarian.generated.DetailedAddressType
+
 case class Address(
   countryCode: String,
   region: Option[String] = None,
@@ -25,4 +27,24 @@ case class Address(
   require(floor.forall(_.nonEmpty))
   require(door.forall(_.nonEmpty))
   require(lotNumber.forall(_.nonEmpty))
+}
+
+object Address {
+
+  def create(detailedAddress: DetailedAddressType): Address =
+    Address(
+      countryCode = detailedAddress.countryCode,
+      region = detailedAddress.region,
+      postalCode = detailedAddress.postalCode,
+      city = detailedAddress.city,
+      streetName = detailedAddress.streetName,
+      publicPlaceCategory = detailedAddress.publicPlaceCategory,
+      number = detailedAddress.number,
+      building = detailedAddress.building,
+      staircase = detailedAddress.staircase,
+      floor = detailedAddress.floor,
+      door = detailedAddress.door,
+      lotNumber = detailedAddress.lotNumber
+    )
+
 }

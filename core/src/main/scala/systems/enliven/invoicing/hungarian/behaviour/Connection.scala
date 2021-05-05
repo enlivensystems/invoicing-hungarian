@@ -5,7 +5,7 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior, DispatcherSelector}
 import akka.pattern.retry
 import systems.enliven.invoicing.hungarian.api.Api.Protocol.Request.Invoices
-import systems.enliven.invoicing.hungarian.api.data.NavEntity
+import systems.enliven.invoicing.hungarian.api.data.{NavEntity, Taxpayer}
 import systems.enliven.invoicing.hungarian.api.{Api, Token}
 import systems.enliven.invoicing.hungarian.behaviour.Connection.Protocol
 import systems.enliven.invoicing.hungarian.core
@@ -41,6 +41,12 @@ object Connection {
       replyTo: ActorRef[Try[Unit]],
       entity: NavEntity
     )
+     extends Command
+
+    final case class QueryTaxpayer(
+      replyTo: ActorRef[Try[Taxpayer]],
+      taxNumber: String,
+      entity: NavEntity)
      extends Command
 
     final case class QueryTransactionStatus(
@@ -86,6 +92,22 @@ class Connection private (
 
   private def initState: Behavior[Protocol.Message] =
     Behaviors.receiveMessage {
+      case Protocol.QueryTaxpayer(replyTo, taxNumber, entity) =>
+        log.trace("Received [query-taxpayer] request.")
+
+        api.queryTaxpayer(taxNumber, entity).onComplete {
+          case Success(value) =>
+            log.debug("Finished [query-taxpayer] request.")
+            replyTo ! value.map(Taxpayer.create(_))
+          case Failure(exception) =>
+            log.error(
+              "Failed [query-transaction-status] request due to [{}] with message [{}]!",
+              exception.getClass.getName,
+              exception.getMessage
+            )
+        }
+
+        Behaviors.same
       case Protocol.ValidateEntity(replyTo, entity) =>
         log.trace("Received [validate-entity] request.")
 
