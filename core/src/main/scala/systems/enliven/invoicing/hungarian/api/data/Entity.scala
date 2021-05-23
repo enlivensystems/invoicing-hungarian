@@ -1,16 +1,16 @@
 package systems.enliven.invoicing.hungarian.api.data
 
-case class NavEntity(
-  credentials: NavEntity.Credentials,
+case class Entity(
+  credentials: Entity.Credentials,
   taxNumber: String
 ) {
   require(taxNumber.matches("[0-9]{8}"))
 }
 
-object NavEntity {
+object Entity {
 
-  def create(taxNumber: String, credentials: Credentials): NavEntity =
-    NavEntity(
+  def create(taxNumber: String, credentials: Credentials): Entity =
+    Entity(
       credentials = credentials,
       taxNumber = taxNumber
     )

@@ -1,12 +1,12 @@
 package systems.enliven.invoicing.hungarian
 
-import systems.enliven.invoicing.hungarian.api.data.NavEntity
+import systems.enliven.invoicing.hungarian.api.data.Entity
 import systems.enliven.invoicing.hungarian.core.Configuration
 
 trait invoicingSuite extends baseSuite {
   protected val invoicing: Invoicing = new Invoicing()
 
-  protected val entity: NavEntity = createEntity()
+  protected val entity: Entity = createEntity()
 
   def getTaxNumber(accountKey: String)(implicit configuration: Configuration): String =
     configuration.get[String](s"invoicing-hungarian.accounts.$accountKey.issuer.tax-number")
@@ -19,9 +19,9 @@ trait invoicingSuite extends baseSuite {
     taxNumberOverride: Option[String] = None
   )(
     implicit configuration: Configuration
-  ): NavEntity =
-    NavEntity(
-      credentials = NavEntity.Credentials(
+  ): Entity =
+    Entity(
+      credentials = Entity.Credentials(
         signingKey = signingKeyOverride.getOrElse(configuration
           .get[String]("invoicing-hungarian.accounts.default-account.signing-key")),
         exchangeKey = exchangeKeyOverride.getOrElse(configuration

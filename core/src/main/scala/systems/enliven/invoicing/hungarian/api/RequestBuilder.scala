@@ -3,7 +3,7 @@ package systems.enliven.invoicing.hungarian.api
 import org.apache.commons.lang3.RandomStringUtils
 import scalaxb.DataRecord
 import scalaxb.DataRecord.__StringXMLFormat
-import systems.enliven.invoicing.hungarian.api.data.NavEntity
+import systems.enliven.invoicing.hungarian.api.data.Entity
 import systems.enliven.invoicing.hungarian.core.Logger
 import systems.enliven.invoicing.hungarian.generated.{
   BasicHeaderType,
@@ -32,7 +32,7 @@ class RequestBuilder() extends Logger {
     )
 
   def buildUserHeader[T : Hash](
-    entity: NavEntity,
+    entity: Entity,
     requestID: String,
     timestamp: Instant,
     payload: T
@@ -51,7 +51,7 @@ class RequestBuilder() extends Logger {
     )
 
   def buildRequestSignature[T : Hash](
-    entity: NavEntity,
+    entity: Entity,
     requestID: String,
     timestamp: Instant,
     payload: T
@@ -66,7 +66,7 @@ class RequestBuilder() extends Logger {
   def buildUserHeader(
     requestID: String,
     timestamp: Instant,
-    entity: NavEntity
+    entity: Entity
   ): UserHeaderType =
     UserHeaderType(
       entity.credentials.login,
@@ -82,7 +82,7 @@ class RequestBuilder() extends Logger {
     )
 
   def buildRequestSignature(
-    entity: NavEntity,
+    entity: Entity,
     requestID: String,
     timestamp: Instant
   ): String =

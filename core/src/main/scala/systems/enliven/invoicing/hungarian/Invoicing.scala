@@ -5,7 +5,7 @@ import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import systems.enliven.invoicing.hungarian.api.Api.Protocol.Request.Invoices
-import systems.enliven.invoicing.hungarian.api.data.{NavEntity, Taxpayer}
+import systems.enliven.invoicing.hungarian.api.data.{Entity, Taxpayer}
 import systems.enliven.invoicing.hungarian.behaviour.{Connection, Guardian}
 import systems.enliven.invoicing.hungarian.core.ConfigLoader.Loader
 import systems.enliven.invoicing.hungarian.core.{Configuration, Logger}
@@ -69,7 +69,7 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
     connection = Some(Await.result(connect(), Duration.Inf).pool)
   }
 
-  def invoices(invoices: Invoices, entity: NavEntity, timeout: FiniteDuration)(
+  def invoices(invoices: Invoices, entity: Entity, timeout: FiniteDuration)(
     implicit askTimeout: Timeout
   ): Try[ManageInvoiceResponse] =
     Await.result(
@@ -79,7 +79,7 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
       timeout
     )
 
-  def invoices(invoices: Invoices, entity: NavEntity)(
+  def invoices(invoices: Invoices, entity: Entity)(
     implicit askTimeout: Timeout,
     maxRetry: Int = 10,
     baseDelay: FiniteDuration = 100.milliseconds
@@ -90,7 +90,7 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
       )
     }(retry.Success.always, typedSystem.executionContext)
 
-  def status(transactionID: String, entity: NavEntity, returnOriginalRequest: Boolean)(
+  def status(transactionID: String, entity: Entity, returnOriginalRequest: Boolean)(
     implicit askTimeout: Timeout
   ): Future[Try[QueryTransactionStatusResponse]] =
     connection.get.ask[Try[QueryTransactionStatusResponse]](
@@ -103,14 +103,14 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
         )
     )
 
-  def status(transactionID: String, entity: NavEntity)(
+  def status(transactionID: String, entity: Entity)(
     implicit askTimeout: Timeout
   ): Future[Try[QueryTransactionStatusResponse]] =
     status(transactionID, entity, returnOriginalRequest = false)(askTimeout)
 
   def status(
     transactionID: String,
-    entity: NavEntity,
+    entity: Entity,
     returnOriginalRequest: Boolean,
     timeout: FiniteDuration
   )(implicit askTimeout: Timeout): Try[QueryTransactionStatusResponse] =
@@ -121,28 +121,28 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
 
   def status(
     transactionID: String,
-    entity: NavEntity,
+    entity: Entity,
     timeout: FiniteDuration
   )(implicit askTimeout: Timeout): Try[QueryTransactionStatusResponse] =
     status(transactionID, entity, returnOriginalRequest = false, timeout)(askTimeout)
 
-  def validate(entity: NavEntity)(implicit askTimeout: Timeout): Future[Try[Unit]] =
+  def validate(entity: Entity)(implicit askTimeout: Timeout): Future[Try[Unit]] =
     connection.get.ask[Try[Unit]](
       replyTo => Connection.Protocol.ValidateEntity(replyTo, entity)
     )
 
-  def validate(entity: NavEntity, timeout: FiniteDuration)(
+  def validate(entity: Entity, timeout: FiniteDuration)(
     implicit askTimeout: Timeout
   ): Try[Unit] = Await.result(validate(entity)(askTimeout), timeout)
 
-  def queryTaxpayer(taxNumber: String, entity: NavEntity)(
+  def queryTaxpayer(taxNumber: String, entity: Entity)(
     implicit askTimeout: Timeout
   ): Future[Try[Taxpayer]] =
     connection.get.ask[Try[Taxpayer]](
       replyTo => Connection.Protocol.QueryTaxpayer(replyTo, taxNumber, entity)
     )
 
-  def queryTaxpayer(taxNumber: String, entity: NavEntity, timeout: FiniteDuration)(
+  def queryTaxpayer(taxNumber: String, entity: Entity, timeout: FiniteDuration)(
     implicit askTimeout: Timeout
   ): Try[Taxpayer] = Await.result(queryTaxpayer(taxNumber, entity)(askTimeout), timeout)
 

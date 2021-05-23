@@ -1,7 +1,7 @@
 package systems.enliven.invoicing.hungarian
 
 import org.scalatest.flatspec.AnyFlatSpec
-import systems.enliven.invoicing.hungarian.api.data.NavEntity
+import systems.enliven.invoicing.hungarian.api.data.Entity
 
 import scala.concurrent.duration.DurationInt
 import scala.util.Try
@@ -17,7 +17,7 @@ class suiteEntityValidation extends AnyFlatSpec with invoicingSuite {
   protected val fakePassword: String = "8z7g7UZHJKH54784"
   protected val fakeTaxNumber: String = "25897878"
 
-  def validate(entity: NavEntity): Try[Unit] = invoicing.validate(entity, 10.seconds)(10.seconds)
+  def validate(entity: Entity): Try[Unit] = invoicing.validate(entity, 10.seconds)(10.seconds)
 
   "The API" should "be able to validate correct entities" in {
     eventually(validate(entity).get)

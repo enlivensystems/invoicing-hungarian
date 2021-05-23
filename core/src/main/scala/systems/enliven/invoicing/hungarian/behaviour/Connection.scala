@@ -5,7 +5,7 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior, DispatcherSelector}
 import akka.pattern.retry
 import systems.enliven.invoicing.hungarian.api.Api.Protocol.Request.Invoices
-import systems.enliven.invoicing.hungarian.api.data.{NavEntity, Taxpayer}
+import systems.enliven.invoicing.hungarian.api.data.{Entity, Taxpayer}
 import systems.enliven.invoicing.hungarian.api.{Api, Token}
 import systems.enliven.invoicing.hungarian.behaviour.Connection.Protocol
 import systems.enliven.invoicing.hungarian.core
@@ -39,27 +39,27 @@ object Connection {
 
     final case class ValidateEntity(
       replyTo: ActorRef[Try[Unit]],
-      entity: NavEntity
+      entity: Entity
     )
      extends Command
 
     final case class QueryTaxpayer(
       replyTo: ActorRef[Try[Taxpayer]],
       taxNumber: String,
-      entity: NavEntity)
+      entity: Entity)
      extends Command
 
     final case class QueryTransactionStatus(
       replyTo: ActorRef[Try[QueryTransactionStatusResponse]],
       transactionID: String,
-      entity: NavEntity,
+      entity: Entity,
       returnOriginalRequest: Boolean = false)
      extends Command
 
     final case class ManageInvoice(
       replyTo: ActorRef[Try[ManageInvoiceResponse]],
       invoices: Invoices,
-      entity: NavEntity)
+      entity: Entity)
      extends Command
 
     final case class PriorityManageInvoice(
@@ -199,7 +199,7 @@ class Connection private (
         Behaviors.unhandled
     }
 
-  private def manageInvoice(entity: NavEntity, invoices: Invoices)(
+  private def manageInvoice(entity: Entity, invoices: Invoices)(
     implicit token: Token
   ): Future[Try[ManageInvoiceResponse]] =
     api.manageInvoice(entity, invoices.toRequest)
@@ -218,7 +218,7 @@ class Connection private (
           Future.failed[Try[ManageInvoiceResponse]](throwable)
       }
 
-  private def refreshToken(entity: NavEntity): Future[TokenExchangeResponse] =
+  private def refreshToken(entity: Entity): Future[TokenExchangeResponse] =
     retry(
       () => api.tokenExchange(entity),
       maxRetry,

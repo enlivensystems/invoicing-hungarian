@@ -6,7 +6,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.Accept
 import akka.util.ByteString
 import scalaxb.{Base64Binary, DataRecord, XMLFormat}
-import systems.enliven.invoicing.hungarian.api.data.{Issuer, Item, NavEntity}
+import systems.enliven.invoicing.hungarian.api.data.{Entity, Issuer, Item}
 import systems.enliven.invoicing.hungarian.api.recipient.Recipient
 import systems.enliven.invoicing.hungarian.core
 import systems.enliven.invoicing.hungarian.core.{Configuration, Logger}
@@ -74,7 +74,7 @@ class Api()(
 
   def queryTaxpayer(
     taxNumber: String,
-    entity: NavEntity
+    entity: Entity
   ): Future[Try[QueryTaxpayerResponse]] = {
     val timestamp = Instant.now()
     val requestID: String = builder.nextRequestID
@@ -103,7 +103,7 @@ class Api()(
 
   def queryTransactionStatus(
     transactionID: String,
-    entity: NavEntity,
+    entity: Entity,
     returnOriginalRequest: Boolean = false
   ): Future[Try[QueryTransactionStatusResponse]] = {
     val timestamp = Instant.now()
@@ -132,7 +132,7 @@ class Api()(
       }
   }
 
-  def manageInvoice(entity: NavEntity, invoiceOperations: InvoiceOperationListType)(
+  def manageInvoice(entity: Entity, invoiceOperations: InvoiceOperationListType)(
     implicit token: Token
   ): Future[Try[ManageInvoiceResponse]] = {
     val timestamp = Instant.now()
@@ -163,7 +163,7 @@ class Api()(
       }
   }
 
-  private[hungarian] def tokenExchange(entity: NavEntity): Future[Try[TokenExchangeResponse]] = {
+  private[hungarian] def tokenExchange(entity: Entity): Future[Try[TokenExchangeResponse]] = {
     val timestamp: Instant = Instant.now()
     val requestID: String = builder.nextRequestID
 

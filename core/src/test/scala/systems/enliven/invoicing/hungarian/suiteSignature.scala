@@ -2,7 +2,7 @@ package systems.enliven.invoicing.hungarian
 
 import org.scalatest.funspec.AnyFunSpec
 import scalaxb.Base64Binary
-import systems.enliven.invoicing.hungarian.api.data.NavEntity
+import systems.enliven.invoicing.hungarian.api.data.Entity
 import systems.enliven.invoicing.hungarian.api.{Api, Hash}
 import systems.enliven.invoicing.hungarian.generated.{
   CREATE,
@@ -15,7 +15,7 @@ import java.time.Instant
 
 class suiteSignature extends AnyFunSpec with invoicingSuite {
 
-  override protected val entity: NavEntity =
+  override protected val entity: Entity =
     createEntity(signingKeyOverride = Some("ce-8f5e-215119fa7dd621DLMRHRLH2S"))
 
   protected val api: Api =
