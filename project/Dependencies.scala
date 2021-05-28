@@ -3,8 +3,8 @@ import sbt._
 object Dependencies {
 
   val coreDependencies = Seq(
-    "org.scala-lang" % "scala-library" % "2.12.13",
-    "org.scala-lang" % "scala-compiler" % "2.12.13",
+    "org.scala-lang" % "scala-library" % "2.12.14",
+    "org.scala-lang" % "scala-compiler" % "2.12.14",
     "org.scalatest" %% "scalatest" % "3.3.0-SNAP3" % "test",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.3",
     "org.slf4j" % "slf4j-api" % "1.7.30",
