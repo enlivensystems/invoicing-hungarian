@@ -20,7 +20,7 @@ object Dependencies {
     "net.databinder.dispatch" %% "dispatch-core" % "0.13.4",
     "javax.xml.bind" % "jaxb-api" % "2.3.1",
     "com.softwaremill.retry" %% "retry" % "0.3.3",
-    "org.bouncycastle" % "bcprov-jdk15on" % "1.68",
+    "org.bouncycastle" % "bcprov-jdk15on" % "1.69",
     "com.github.javafaker" % "javafaker" % "1.0.2" % "test"
   )
 
