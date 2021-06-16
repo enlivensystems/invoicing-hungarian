@@ -6,7 +6,7 @@ object Dependencies {
     "org.scala-lang" % "scala-library" % "2.12.13",
     "org.scala-lang" % "scala-compiler" % "2.12.13",
     "org.scalatest" %% "scalatest" % "3.3.0-SNAP3" % "test",
-    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.3",
+    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4",
     "org.slf4j" % "slf4j-api" % "1.7.30",
     "org.slf4j" % "slf4j-log4j12" % "1.7.30",
     "com.typesafe.akka" %% "akka-actor" % "2.6.15",
