@@ -18,6 +18,14 @@ object VAT {
     */
   final case object TEHK extends VAT(0)
 
+  final val vats: Seq[VAT] = Seq(Standard, AAM, TEHK)
+
+  def test: VAT = vats(scala.util.Random.nextInt(vats.size))
+
+  def withName(name: String): VAT =
+    vats.find(_.toString == name)
+      .getOrElse(throw new NoSuchElementException(s"No value found for [$name]"))
+
   implicit class APIConvert(vat: VAT) {
 
     def toVatRate: VatRateType =
