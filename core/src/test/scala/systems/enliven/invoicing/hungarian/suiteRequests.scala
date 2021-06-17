@@ -3,7 +3,7 @@ package systems.enliven.invoicing.hungarian
 import org.apache.commons.lang3.RandomStringUtils
 import org.scalatest.funspec.AnyFunSpec
 import systems.enliven.invoicing.hungarian.api.Api.Protocol.Request.Invoices
-import systems.enliven.invoicing.hungarian.api.data.{Address, Issuer, Item}
+import systems.enliven.invoicing.hungarian.api.data._
 import systems.enliven.invoicing.hungarian.api.recipient.Recipient
 
 import java.util.Date
@@ -14,48 +14,82 @@ import scala.util.{Failure, Success}
 
 class suiteRequests extends AnyFunSpec with invoicingSuite {
 
-  val smartInvoices: Seq[Invoices.Invoice] = {
-    TestDataGenerator.testRecipients.map {
-      recipient: Recipient =>
-        Invoices.Smart(
-          number = RandomStringUtils.randomAlphanumeric(32),
-          reference = None,
-          issued = new Date(),
-          delivered = new Date(),
-          paid = new Date(),
-          currencyCode = "HUF",
-          exchangeRate = 1,
-          periodical = false,
-          issuer = Issuer(
-            taxNumber = "25962295",
-            taxCode = "2",
-            taxCounty = "07",
-            communityTaxNumber = "HU25962295",
-            name = "W",
-            address = Address(
-              countryCode = "HU",
-              region = None,
-              postalCode = "1092",
-              city = "W",
-              streetName = "W",
-              publicPlaceCategory = "W"
-            ),
-            bankAccountNumber = "00000000-00000000-00000000"
-          ),
-          recipient = recipient,
-          operation = Invoices.Operation.create,
-          items = Seq(
-            Item(
-              name = TestDataGenerator.faker.commerce().productName(),
-              quantity = scala.util.Random.nextInt(10) + 1,
-              price = BigDecimal(scala.util.Random.nextInt(1000) + 1),
-              tax = BigDecimal("0.27"),
-              intermediated = false
-            )
-          )
-        )
-    }
+  def createSmartInvoice(recipient: Recipient, vat: VAT): Invoices.Smart =
+    Invoices.Smart(
+      number = RandomStringUtils.randomAlphanumeric(32),
+      reference = None,
+      issued = new Date(),
+      delivered = new Date(),
+      paid = new Date(),
+      currencyCode = "HUF",
+      exchangeRate = 1,
+      periodical = false,
+      issuer = Issuer(
+        taxNumber = "25962295",
+        taxCode = "2",
+        taxCounty = "07",
+        communityTaxNumber = "HU25962295",
+        name = "W",
+        address = Address(
+          countryCode = "HU",
+          region = None,
+          postalCode = "1092",
+          city = "W",
+          streetName = "W",
+          publicPlaceCategory = "W"
+        ),
+        bankAccountNumber = "00000000-00000000-00000000"
+      ),
+      recipient = recipient,
+      operation = Invoices.Operation.create,
+      items = {
+        val grossPrice = BigDecimal(scala.util.Random.nextInt(10000) + 1)
+        val vatPrice = (grossPrice / BigDecimal(100 + vat.rate) * BigDecimal(vat.rate))
+          .setScale(0, BigDecimal.RoundingMode.HALF_UP)
+        Item(
+          name = TestDataGenerator.faker.commerce().productName(),
+          netUnitPrice = grossPrice - vatPrice,
+          vatUnitPrice = vatPrice,
+          grossUnitPrice = grossPrice,
+          quantity = 1,
+          vat = vat,
+          intermediated = false
+        ) :: Nil
+      }
+    )
+
+  def logException(exception: Throwable): Nothing = {
+    log.error(
+      "Failed with [{}] with message [{}]!",
+      exception.getClass.getName,
+      exception.getMessage
+    )
+    fail
   }
+
+  def testManageInvoice(invoices: Invoices): String =
+    eventually {
+      val response = invoicing.invoices(invoices, entity, 10.seconds)(10.seconds)
+
+      response match {
+        case Success(response) =>
+          response.result.errorCode shouldEqual None
+          response.result.message shouldEqual None
+          response.transactionId
+        case Failure(exception) => logException(exception)
+      }
+    }
+
+  var transactionIDs: Seq[String] = Seq.empty
+
+  val smartInvoices1: Seq[Invoices.Invoice] =
+    TestDataGenerator.testRecipients.map(createSmartInvoice(_, VAT.Standard))
+
+  val smartInvoices2: Seq[Invoices.Invoice] =
+    TestDataGenerator.testRecipients.map(createSmartInvoice(_, VAT.AAM))
+
+  val smartInvoices3: Seq[Invoices.Invoice] =
+    TestDataGenerator.testRecipients.map(createSmartInvoice(_, VAT.TEHK))
 
   val invoices: Invoices = Invoices(
     Invoices.Raw(Invoices.Operation.create, DatatypeConverter.parseBase64Binary("something")) ::
@@ -65,24 +99,14 @@ class suiteRequests extends AnyFunSpec with invoicingSuite {
   )
 
   describe("The request API") {
-    def testManageInvoice(invoices: Invoices) =
-      eventually {
-        val response = invoicing.invoices(invoices, entity, 10.seconds)(10.seconds)
-
-        response match {
-          case Success(response) =>
-            response.result.errorCode shouldEqual None
-            response.result.message shouldEqual None
-            response.transactionId
-          case Failure(exception) =>
-            logException(exception)
-        }
-      }
 
     it("should be able to make a call to manage-invoice,") {
-      testManageInvoice(invoices)
-      testManageInvoice(Invoices(smartInvoices))
+      transactionIDs = transactionIDs :+ testManageInvoice(Invoices(smartInvoices1))
+      transactionIDs = transactionIDs :+ testManageInvoice(Invoices(smartInvoices2))
+      transactionIDs = transactionIDs :+ testManageInvoice(Invoices(smartInvoices3))
+      transactionIDs = transactionIDs :+ testManageInvoice(invoices)
     }
+
     it(
       "should not be able to make a call to query-transaction-state with invalid transaction ID,"
     ) {
@@ -118,14 +142,8 @@ class suiteRequests extends AnyFunSpec with invoicingSuite {
       "should be able to make a call to query-transaction-state with with " +
         "valid and existent transaction ID without validation errors,"
     ) {
-      val transactionID = testManageInvoice(Invoices(smartInvoices))
-
-      var i = 10
+      val transactionID = transactionIDs.head
       eventually {
-        if (i > 0) {
-          i = i - 1
-        }
-
         val response =
           invoicing.status(transactionID, entity, returnOriginalRequest = true, 10.seconds)(
             10.seconds
@@ -138,7 +156,6 @@ class suiteRequests extends AnyFunSpec with invoicingSuite {
               response.processingResults.get.processingResult.head.originalRequest.get.toString
             )
 
-            i shouldEqual 0
             response.processingResults.isEmpty shouldEqual false
             response.processingResults.get.processingResult.forall(
               _.invoiceStatus.toString != "ABORTED"
@@ -171,15 +188,6 @@ class suiteRequests extends AnyFunSpec with invoicingSuite {
         completed.get() shouldEqual testCount
       }
     }
-  }
-
-  def logException(exception: Throwable) = {
-    log.error(
-      "Failed with [{}] with message [{}]!",
-      exception.getClass.getName,
-      exception.getMessage
-    )
-    fail
   }
 
 }

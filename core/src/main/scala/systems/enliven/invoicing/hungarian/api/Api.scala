@@ -6,7 +6,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.Accept
 import akka.util.ByteString
 import scalaxb.{Base64Binary, DataRecord, XMLFormat}
-import systems.enliven.invoicing.hungarian.api.data.{Entity, Issuer, Item}
+import systems.enliven.invoicing.hungarian.api.data.{Entity, Issuer, Item, TaxRateSummary}
 import systems.enliven.invoicing.hungarian.api.recipient.Recipient
 import systems.enliven.invoicing.hungarian.core
 import systems.enliven.invoicing.hungarian.core.{Configuration, Logger}
@@ -332,12 +332,12 @@ object Api extends XMLProtocol with Logger {
             val invoice = this
             val simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd")
             simpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"))
+
             val invoiceData = Api.writeData[InvoiceDataType](
               InvoiceDataType(
                 invoice.number,
-                DatatypeFactory.newInstance.newXMLGregorianCalendar(
-                  simpleDateFormat.format(invoice.issued)
-                ),
+                invoiceIssueDate = DatatypeFactory.newInstance
+                  .newXMLGregorianCalendar(simpleDateFormat.format(invoice.issued)),
                 completenessIndicator = false,
                 InvoiceMainType(
                   Seq(
@@ -379,17 +379,15 @@ object Api extends XMLProtocol with Logger {
                               )
                             ),
                             Some(invoice.issuer.bankAccountNumber),
-                            Some(false),
+                            None,
                             None
                           ),
                           customerInfo = Some(recipient.toCustomerInfoType),
                           fiscalRepresentativeInfo = None,
                           invoiceDetail = InvoiceDetailType(
                             invoiceCategory = NORMAL,
-                            invoiceDeliveryDate =
-                              DatatypeFactory.newInstance.newXMLGregorianCalendar(
-                                simpleDateFormat.format(invoice.delivered)
-                              ),
+                            invoiceDeliveryDate = DatatypeFactory.newInstance
+                              .newXMLGregorianCalendar(simpleDateFormat.format(invoice.delivered)),
                             invoiceDeliveryPeriodStart = None,
                             invoiceDeliveryPeriodEnd = None,
                             invoiceAccountingDeliveryDate = None,
@@ -399,9 +397,8 @@ object Api extends XMLProtocol with Logger {
                             exchangeRate = invoice.exchangeRate,
                             selfBillingIndicator = None,
                             paymentMethod = Some(CARD),
-                            paymentDate = Some(DatatypeFactory.newInstance.newXMLGregorianCalendar(
-                              simpleDateFormat.format(invoice.paid)
-                            )),
+                            paymentDate = Some(DatatypeFactory.newInstance
+                              .newXMLGregorianCalendar(simpleDateFormat.format(invoice.paid))),
                             cashAccountingIndicator = None,
                             invoiceAppearance = ELECTRONIC,
                             conventionalInvoiceInfo = None,
@@ -415,25 +412,6 @@ object Api extends XMLProtocol with Logger {
                             invoice.items.map {
                               item =>
                                 i = i + 1
-                                val unitPrice: BigDecimal =
-                                  item.price.setScale(2, BigDecimal.RoundingMode.HALF_UP)
-
-                                val unitPriceHUF: BigDecimal = (unitPrice * invoice.exchangeRate)
-                                  .setScale(2, BigDecimal.RoundingMode.HALF_UP)
-
-                                val lineNetAmount: BigDecimal = unitPrice * item.quantity
-                                val lineNetAmountHUF: BigDecimal = unitPriceHUF * item.quantity
-
-                                val lineVatAmount: BigDecimal = (lineNetAmount * item.tax).setScale(
-                                  2,
-                                  BigDecimal.RoundingMode.HALF_UP
-                                )
-                                val lineVatAmountHUF: BigDecimal =
-                                  (lineNetAmountHUF * item.tax).setScale(
-                                    2,
-                                    BigDecimal.RoundingMode.HALF_UP
-                                  )
-
                                 LineType(
                                   lineNumber = BigInt(i),
                                   lineModificationReference = None,
@@ -446,8 +424,8 @@ object Api extends XMLProtocol with Logger {
                                   quantity = Some(BigDecimal(item.quantity)),
                                   unitOfMeasure = Some(PIECE),
                                   unitOfMeasureOwn = None,
-                                  unitPrice = Some(unitPrice),
-                                  unitPriceHUF = Some(unitPriceHUF),
+                                  unitPrice = Some(item.netUnitPrice),
+                                  unitPriceHUF = Some(item.netUnitPriceHUF(invoice.exchangeRate)),
                                   lineDiscountData = None,
                                   linetypeoption = Some(
                                     DataRecord[LineAmountsNormalType](
@@ -455,27 +433,19 @@ object Api extends XMLProtocol with Logger {
                                       key = Some("lineAmountsNormal"),
                                       value = LineAmountsNormalType(
                                         lineNetAmountData = LineNetAmountDataType(
-                                          lineNetAmount = lineNetAmount,
-                                          lineNetAmountHUF = lineNetAmountHUF
+                                          lineNetAmount = item.netPrice,
+                                          lineNetAmountHUF = item.netPriceHUF(invoice.exchangeRate)
                                         ),
-                                        lineVatRate = VatRateType(
-                                          DataRecord[BigDecimal](
-                                            namespace = None,
-                                            key = Some("vatPercentage"),
-                                            item.tax.setScale(2, BigDecimal.RoundingMode.HALF_UP)
-                                          )
-                                        ),
+                                        lineVatRate = item.vat.toVatRate,
                                         lineVatData = Some(LineVatDataType(
-                                          lineVatAmount = lineVatAmount,
-                                          lineVatAmountHUF = lineVatAmountHUF
+                                          lineVatAmount = item.vatPrice,
+                                          lineVatAmountHUF = item.vatPriceHUF(invoice.exchangeRate)
                                         )),
-                                        lineGrossAmountData = Some(
-                                          LineGrossAmountDataType(
-                                            lineGrossAmountNormal = lineNetAmount + lineVatAmount,
-                                            lineGrossAmountNormalHUF =
-                                              lineNetAmountHUF + lineVatAmountHUF
-                                          )
-                                        )
+                                        lineGrossAmountData = Some(LineGrossAmountDataType(
+                                          lineGrossAmountNormal = item.grossPrice,
+                                          lineGrossAmountNormalHUF =
+                                            item.grossPriceHUF(invoice.exchangeRate)
+                                        ))
                                       )
                                     )
                                   ),
@@ -500,55 +470,43 @@ object Api extends XMLProtocol with Logger {
                           Seq(DataRecord[SummaryNormalType](
                             namespace = None,
                             key = Some("summaryNormal"), {
-                              val taxRateSummary = invoice.items.groupBy(_.tax).map {
-                                case (rate, items) =>
-                                  val netInCurrency =
-                                    items.map(
-                                      item => item.price * item.quantity
-                                    ).sum.setScale(2, BigDecimal.RoundingMode.HALF_UP)
-                                  val netInHUF = (items.map(
-                                    item => item.price * item.quantity
-                                  ).sum * invoice.exchangeRate)
-                                    .setScale(2, BigDecimal.RoundingMode.HALF_UP)
-                                  val taxInCurrency =
-                                    items.map(
-                                      item => item.price * item.quantity * item.tax
-                                    ).sum.setScale(2, BigDecimal.RoundingMode.HALF_UP)
-                                  val taxInHUF = (items.map(
-                                    item => item.price * item.quantity * item.tax
-                                  ).sum * invoice.exchangeRate)
-                                    .setScale(2, BigDecimal.RoundingMode.HALF_UP)
-                                  rate -> (netInCurrency, netInHUF, taxInCurrency, taxInHUF)
+                              val taxRateSummary = invoice.items.groupBy(_.vat).map {
+                                case (vat, items) =>
+                                  TaxRateSummary(
+                                    vat = vat,
+                                    netInCurrency = items.map(_.netPrice).sum,
+                                    netInHUF = items.map(_.netPriceHUF(invoice.exchangeRate)).sum,
+                                    vatInCurrency = items.map(_.vatPrice).sum,
+                                    vatInHUF = items.map(_.vatPriceHUF(invoice.exchangeRate)).sum,
+                                    grossInCurrency = items.map(_.grossPrice).sum,
+                                    grossInHUF =
+                                      items.map(_.grossPriceHUF(invoice.exchangeRate)).sum
+                                  )
                               }
                               SummaryNormalType(
-                                taxRateSummary.map {
-                                  case (rate, (netInCurrency, netInHUF, taxInCurrency, taxInHUF)) =>
-                                    SummaryByVatRateType(
-                                      VatRateType(
-                                        DataRecord[BigDecimal](
-                                          namespace = None,
-                                          key = Some("vatPercentage"),
-                                          rate.setScale(2, BigDecimal.RoundingMode.HALF_UP)
-                                        )
-                                      ),
-                                      VatRateNetDataType(
-                                        netInCurrency,
-                                        netInHUF
-                                      ),
-                                      VatRateVatDataType(
-                                        taxInCurrency,
-                                        taxInHUF
-                                      ),
-                                      Some(VatRateGrossDataType(
-                                        netInCurrency + taxInCurrency,
-                                        netInHUF + taxInHUF
-                                      ))
-                                    )
-                                }.toSeq,
-                                taxRateSummary.map(_._2._1).sum,
-                                taxRateSummary.map(_._2._2).sum,
-                                taxRateSummary.map(_._2._3).sum,
-                                taxRateSummary.map(_._2._4).sum
+                                summaryByVatRate =
+                                  taxRateSummary.map {
+                                    taxRateSummary =>
+                                      SummaryByVatRateType(
+                                        vatRate = taxRateSummary.vat.toVatRate,
+                                        vatRateNetData = VatRateNetDataType(
+                                          vatRateNetAmount = taxRateSummary.netInCurrency,
+                                          vatRateNetAmountHUF = taxRateSummary.netInHUF
+                                        ),
+                                        vatRateVatData = VatRateVatDataType(
+                                          vatRateVatAmount = taxRateSummary.vatInCurrency,
+                                          vatRateVatAmountHUF = taxRateSummary.vatInHUF
+                                        ),
+                                        vatRateGrossData = Some(VatRateGrossDataType(
+                                          vatRateGrossAmount = taxRateSummary.grossInCurrency,
+                                          vatRateGrossAmountHUF = taxRateSummary.grossInHUF
+                                        ))
+                                      )
+                                  }.toSeq,
+                                invoiceNetAmount = taxRateSummary.map(_.netInCurrency).sum,
+                                invoiceNetAmountHUF = taxRateSummary.map(_.netInHUF).sum,
+                                invoiceVatAmount = taxRateSummary.map(_.vatInCurrency).sum,
+                                invoiceVatAmountHUF = taxRateSummary.map(_.vatInHUF).sum
                               )
                             }
                           )),
@@ -560,6 +518,7 @@ object Api extends XMLProtocol with Logger {
                 )
               )
             )
+
             log.trace("Invoice XML data before base-64 is [{}].", invoiceData)
             new Base64Binary(invoiceData.getBytes("UTF-8").toVector)
           }
