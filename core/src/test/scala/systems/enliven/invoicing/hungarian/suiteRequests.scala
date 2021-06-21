@@ -43,6 +43,7 @@ class suiteRequests extends AnyFunSpec with invoicingSuite {
       recipient = recipient,
       operation = Invoices.Operation.create,
       items = {
+
         val grossPrice = BigDecimal(scala.util.Random.nextInt(10000) + 1)
         val vatPrice = (grossPrice / BigDecimal(100 + vat.rate) * BigDecimal(vat.rate))
           .setScale(0, BigDecimal.RoundingMode.HALF_UP)
@@ -89,7 +90,7 @@ class suiteRequests extends AnyFunSpec with invoicingSuite {
     TestDataGenerator.testRecipients.map(createSmartInvoice(_, VAT.AAM))
 
   val smartInvoices3: Seq[Invoices.Invoice] =
-    TestDataGenerator.testRecipients.map(createSmartInvoice(_, VAT.TEHK))
+    TestDataGenerator.testRecipients.map(createSmartInvoice(_, VAT.EUE))
 
   val invoices: Invoices = Invoices(
     Invoices.Raw(Invoices.Operation.create, DatatypeConverter.parseBase64Binary("something")) ::
@@ -142,31 +143,34 @@ class suiteRequests extends AnyFunSpec with invoicingSuite {
       "should be able to make a call to query-transaction-state with with " +
         "valid and existent transaction ID without validation errors,"
     ) {
-      val transactionID = transactionIDs.head
-      eventually {
-        val response =
-          invoicing.status(transactionID, entity, returnOriginalRequest = true, 10.seconds)(
-            10.seconds
-          )
 
-        response match {
-          case Success(response) =>
-            log.trace(
-              "Original request was [{}].",
-              response.processingResults.get.processingResult.head.originalRequest.get.toString
-            )
+      transactionIDs.init.foreach {
+        transactionID =>
+          eventually {
+            val response =
+              invoicing.status(transactionID, entity, returnOriginalRequest = true, 10.seconds)(
+                10.seconds
+              )
 
-            response.processingResults.isEmpty shouldEqual false
-            response.processingResults.get.processingResult.forall(
-              _.invoiceStatus.toString != "ABORTED"
-            ) shouldEqual true
-            response.processingResults.get.processingResult.head
-              .technicalValidationMessages.size shouldEqual 0
-            response.result.errorCode shouldEqual None
-            response.result.message shouldEqual None
-          case Failure(exception) =>
-            logException(exception)
-        }
+            response match {
+              case Success(response) =>
+                log.trace(
+                  "Original request was [{}].",
+                  response.processingResults.get.processingResult.head.originalRequest.get.toString
+                )
+
+                response.processingResults.isEmpty shouldEqual false
+                response.processingResults.get.processingResult.forall(
+                  _.invoiceStatus.toString != "ABORTED"
+                ) shouldEqual true
+                response.processingResults.get.processingResult.head
+                  .technicalValidationMessages.size shouldEqual 0
+                response.result.errorCode shouldEqual None
+                response.result.message shouldEqual None
+              case Failure(exception) =>
+                logException(exception)
+            }
+          }
       }
     }
 
