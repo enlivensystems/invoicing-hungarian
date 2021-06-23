@@ -90,7 +90,7 @@ class suiteRequests extends AnyFunSpec with invoicingSuite {
     TestDataGenerator.testRecipients.map(createSmartInvoice(_, VAT.AAM))
 
   val smartInvoices3: Seq[Invoices.Invoice] =
-    TestDataGenerator.testRecipients.map(createSmartInvoice(_, VAT.EUE))
+    TestDataGenerator.testRecipients.map(createSmartInvoice(_, VAT.ATK))
 
   val invoices: Invoices = Invoices(
     Invoices.Raw(Invoices.Operation.create, DatatypeConverter.parseBase64Binary("something")) ::
