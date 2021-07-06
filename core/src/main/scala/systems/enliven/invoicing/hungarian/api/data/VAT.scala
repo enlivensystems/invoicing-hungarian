@@ -3,47 +3,53 @@ package systems.enliven.invoicing.hungarian.api.data
 import scalaxb.DataRecord
 import systems.enliven.invoicing.hungarian.generated.{VatRateType, _}
 
-sealed abstract class VAT(val rate: Int)
+sealed abstract class VAT(val rate: Int, val countryCode: String) {
+  def toCode: String = countryCode + "-" + toString
+}
 
 object VAT {
-  final case object Standard extends VAT(27)
 
-  /**
-    * Alanyi adómentesség
-    */
-  final case object AAM extends VAT(0)
+  object Hungarian {
+    final case object Standard extends VAT(27, "HU")
 
-  /**
-    * Áfa tárgyi hatályán kívül
-    */
-  final case object ATK extends VAT(0)
+    /**
+      * Alanyi adómentesség
+      */
+    final case object AAM extends VAT(0, "HU")
 
-  final val vats: Seq[VAT] = Seq(Standard, AAM, ATK)
+    /**
+      * Áfa tárgyi hatályán kívül
+      */
+    final case object ATK extends VAT(0, "HU")
+
+  }
+
+  final val vats: Seq[VAT] = Seq(Hungarian.Standard, Hungarian.AAM, Hungarian.ATK)
 
   def test: VAT = vats(scala.util.Random.nextInt(vats.size))
 
-  def withName(name: String): VAT =
-    vats.find(_.toString == name)
-      .getOrElse(throw new NoSuchElementException(s"No value found for [$name]"))
+  def fromCode(code: String): VAT =
+    vats.find(_.toCode == code)
+      .getOrElse(throw new NoSuchElementException(s"No value found for [$code]"))
 
   implicit class APIConvert(vat: VAT) {
 
     def toVatRate: VatRateType =
       VatRateType(
         vat match {
-          case Standard =>
+          case Hungarian.Standard =>
             DataRecord[BigDecimal](
               namespace = None,
               key = Some("vatPercentage"),
-              value = BigDecimal(Standard.rate) / BigDecimal(100)
+              value = BigDecimal(Hungarian.Standard.rate) / BigDecimal(100)
             )
-          case AAM =>
+          case Hungarian.AAM =>
             DataRecord[DetailedReasonType](
               namespace = None,
               key = Some("vatExemption"),
               value = DetailedReasonType("AAM", "alanyi adómentes")
             )
-          case ATK =>
+          case Hungarian.ATK =>
             DataRecord[DetailedReasonType](
               namespace = None,
               key = Some("vatOutOfScope"),
