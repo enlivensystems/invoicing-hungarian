@@ -20,11 +20,21 @@ object VAT {
     /**
       * Áfa tárgyi hatályán kívül
       */
-    final case object ATK extends VAT(0, "HU")
+    final case object EUFAD37 extends VAT(0, "HU")
+
+    /**
+      * Áfa tárgyi hatályán kívül
+      */
+    final case object HO extends VAT(0, "HU")
 
   }
 
-  final val vats: Seq[VAT] = Seq(Hungarian.Standard, Hungarian.AAM, Hungarian.ATK)
+  final val vats: Seq[VAT] = Seq(
+    Hungarian.Standard,
+    Hungarian.AAM,
+    Hungarian.EUFAD37,
+    Hungarian.HO
+  )
 
   def test: VAT = vats(scala.util.Random.nextInt(vats.size))
 
@@ -49,13 +59,22 @@ object VAT {
               key = Some("vatExemption"),
               value = DetailedReasonType("AAM", "alanyi adómentes")
             )
-          case Hungarian.ATK =>
+          case Hungarian.EUFAD37 =>
             DataRecord[DetailedReasonType](
               namespace = None,
               key = Some("vatOutOfScope"),
               value = DetailedReasonType(
-                "ATK",
-                "áfa tárgyi hatályán kívül"
+                "EUFAD37",
+                "áfa törvény 37. paragrafusa alapján másik tagállamban teljesített, fordítottan adózó ügylet"
+              )
+            )
+          case Hungarian.HO =>
+            DataRecord[DetailedReasonType](
+              namespace = None,
+              key = Some("vatOutOfScope"),
+              value = DetailedReasonType(
+                "HO",
+                "harmadik országban teljesített ügylet"
               )
             )
         }
