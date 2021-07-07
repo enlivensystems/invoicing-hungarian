@@ -18,12 +18,12 @@ object VAT {
     final case object AAM extends VAT(0, "HU")
 
     /**
-      * Áfa tárgyi hatályán kívül
+      * Áfa törvény 37. paragrafusa alapján másik tagállamban teljesített, fordítottan adózó ügylet
       */
     final case object EUFAD37 extends VAT(0, "HU")
 
     /**
-      * Áfa tárgyi hatályán kívül
+      * Harmadik országban teljesített ügylet
       */
     final case object HO extends VAT(0, "HU")
 
