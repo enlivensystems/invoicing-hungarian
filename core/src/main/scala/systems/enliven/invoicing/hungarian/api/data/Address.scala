@@ -16,7 +16,7 @@ case class Address(
   door: Option[String] = None,
   lotNumber: Option[String] = None) {
   require(countryCode.matches("""[A-Z]{2}""")) // ISO-3166 alpha 2
-  require(region.forall(_.matches("""[A-Z0-9]{3}""")))
+  require(region.forall(_.matches("""[A-Z0-9]{1,3}""")))
   require(postalCode.matches("""[A-Z0-9]{4,10}"""))
   require(city.nonEmpty)
   require(streetName.nonEmpty)
