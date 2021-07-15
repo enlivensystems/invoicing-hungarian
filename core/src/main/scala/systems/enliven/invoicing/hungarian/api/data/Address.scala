@@ -1,6 +1,9 @@
 package systems.enliven.invoicing.hungarian.api.data
 
 import systems.enliven.invoicing.hungarian.generated.DetailedAddressType
+import systems.enliven.invoicing.hungarian.core.requirement.StringRequirement._
+
+import scala.util.matching.Regex
 
 case class Address(
   countryCode: String,
@@ -15,21 +18,27 @@ case class Address(
   floor: Option[String] = None,
   door: Option[String] = None,
   lotNumber: Option[String] = None) {
-  require(countryCode.matches("""[A-Z]{2}""")) // ISO-3166 alpha 2
-  require(region.forall(_.matches("""[A-Z0-9]{1,3}""")))
-  require(postalCode.matches("""[A-Z0-9]{4,10}"""))
-  require(city.nonEmpty)
-  require(streetName.nonEmpty)
-  require(publicPlaceCategory.nonEmpty)
-  require(number.forall(_.nonEmpty))
-  require(building.forall(_.nonEmpty))
-  require(staircase.forall(_.nonEmpty))
-  require(floor.forall(_.nonEmpty))
-  require(door.forall(_.nonEmpty))
-  require(lotNumber.forall(_.nonEmpty))
+  countryCode.named("countryCode")
+    .nonEmpty.trimmed.matches(Address.countryCodeRegex.regex) // ISO-3166 alpha 2
+  region.named("region")
+    .nonEmpty.trimmed.matches(Address.regionCodeRegex.regex)
+  postalCode.named("postalCode")
+    .nonEmpty.trimmed.matches(Address.postalCodeRegex.regex)
+  city.named("city").nonEmpty.trimmed
+  streetName.named("streetName").nonEmpty.trimmed
+  publicPlaceCategory.named("publicPlaceCategory").nonEmpty.trimmed
+  number.named("number").nonEmpty.trimmed
+  building.named("building").nonEmpty.trimmed
+  staircase.named("staircase").nonEmpty.trimmed
+  floor.named("floor").nonEmpty.trimmed
+  door.named("door").nonEmpty.trimmed
+  lotNumber.named("lotNumber").nonEmpty.trimmed
 }
 
 object Address {
+  final val countryCodeRegex: Regex = """[A-Z]{2}""".r
+  final val regionCodeRegex: Regex = """[A-Z0-9]{1,3}""".r
+  final val postalCodeRegex: Regex = """[A-Z0-9][A-Z0-9\s\-]{1,8}[A-Z0-9]""".r
 
   def create(detailedAddress: DetailedAddressType): Address =
     Address(

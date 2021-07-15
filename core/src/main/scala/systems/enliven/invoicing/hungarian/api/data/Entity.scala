@@ -1,13 +1,20 @@
 package systems.enliven.invoicing.hungarian.api.data
 
+import systems.enliven.invoicing.hungarian.core.requirement.StringRequirement._
+
+import scala.util.matching.Regex
+
 case class Entity(
   credentials: Entity.Credentials,
   taxNumber: String
 ) {
-  require(taxNumber.matches("[0-9]{8}"))
+  taxNumber.named("taxNumber")
+    .nonEmpty.trimmed.matches(Entity.taxNumberRegex.regex)
 }
 
 object Entity {
+
+  final val taxNumberRegex: Regex = """[0-9]{8}""".r
 
   def create(taxNumber: String, credentials: Credentials): Entity =
     Entity(
@@ -20,10 +27,10 @@ object Entity {
     exchangeKey: String,
     login: String,
     password: String) {
-    require(signingKey.trim.nonEmpty)
-    require(exchangeKey.trim.nonEmpty)
-    require(login.trim.nonEmpty)
-    require(password.trim.nonEmpty)
+    signingKey.named("signingKey").nonEmpty.trimmed
+    exchangeKey.named("exchangeKey").nonEmpty.trimmed
+    login.named("login").nonEmpty.trimmed
+    password.named("password").nonEmpty.trimmed
   }
 
 }
