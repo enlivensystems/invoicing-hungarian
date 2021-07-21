@@ -11,6 +11,7 @@ import systems.enliven.invoicing.hungarian.core.ConfigLoader.Loader
 import systems.enliven.invoicing.hungarian.core.{Configuration, Logger}
 import systems.enliven.invoicing.hungarian.generated.{
   ManageInvoiceResponse,
+  QueryInvoiceDataResponse,
   QueryTransactionStatusResponse
 }
 
@@ -145,5 +146,17 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
   def queryTaxpayer(taxNumber: String, entity: Entity, timeout: FiniteDuration)(
     implicit askTimeout: Timeout
   ): Try[Taxpayer] = Await.result(queryTaxpayer(taxNumber, entity)(askTimeout), timeout)
+
+  def queryInvoiceData(invoiceNumber: String, entity: Entity)(
+    implicit askTimeout: Timeout
+  ): Future[Try[QueryInvoiceDataResponse]] =
+    connection.get.ask[Try[QueryInvoiceDataResponse]](
+      replyTo => Connection.Protocol.QueryInvoiceData(replyTo, invoiceNumber, entity)
+    )
+
+  def queryInvoiceData(invoiceNumber: String, entity: Entity, timeout: FiniteDuration)(
+    implicit askTimeout: Timeout
+  ): Try[QueryInvoiceDataResponse] =
+    Await.result(queryInvoiceData(invoiceNumber, entity)(askTimeout), timeout)
 
 }

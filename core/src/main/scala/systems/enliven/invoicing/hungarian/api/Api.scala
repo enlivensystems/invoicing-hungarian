@@ -72,6 +72,35 @@ class Api()(
   private val apiData: Data = Data()
   private[hungarian] val builder: RequestBuilder = new RequestBuilder()
 
+  def queryInvoiceData(
+    invoiceNumber: String,
+    entity: Entity
+  ): Future[Try[QueryInvoiceDataResponse]] = {
+    val timestamp = Instant.now()
+    val requestID: String = builder.nextRequestID
+
+    val payload = QueryInvoiceDataRequest(
+      builder.buildBasicHeader(requestID, timestamp),
+      builder.buildUserHeader(requestID, timestamp, entity),
+      buildSoftware,
+      InvoiceNumberQueryType(invoiceNumber, OUTBOUND)
+    )
+
+    request("queryInvoiceData", Api.writeRequest[QueryInvoiceDataRequest](payload))
+      .map {
+        case (status: StatusCode, response: String) =>
+          Try {
+            status match {
+              case StatusCodes.OK =>
+                Api.parse[QueryInvoiceDataResponse](response)
+              case _ =>
+                val errorResponse = Api.parse[GeneralErrorResponse](Fixer.fixResponse(response))
+                throw new core.Exception(Api.format(errorResponse))
+            }
+          }
+      }
+  }
+
   def queryTaxpayer(
     taxNumber: String,
     entity: Entity

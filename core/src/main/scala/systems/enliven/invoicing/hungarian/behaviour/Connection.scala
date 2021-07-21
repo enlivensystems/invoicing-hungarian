@@ -12,6 +12,7 @@ import systems.enliven.invoicing.hungarian.core
 import systems.enliven.invoicing.hungarian.core.{Configuration, Logger}
 import systems.enliven.invoicing.hungarian.generated.{
   ManageInvoiceResponse,
+  QueryInvoiceDataResponse,
   QueryTransactionStatusResponse,
   TokenExchangeResponse
 }
@@ -46,6 +47,12 @@ object Connection {
     final case class QueryTaxpayer(
       replyTo: ActorRef[Try[Taxpayer]],
       taxNumber: String,
+      entity: Entity)
+     extends Command
+
+    final case class QueryInvoiceData(
+      replyTo: ActorRef[Try[QueryInvoiceDataResponse]],
+      invoiceNumber: String,
       entity: Entity)
      extends Command
 
@@ -92,6 +99,22 @@ class Connection private (
 
   private def initState: Behavior[Protocol.Message] =
     Behaviors.receiveMessage {
+      case Protocol.QueryInvoiceData(replyTo, invoiceNumber, entity) =>
+        log.trace("Received [query-invoice-data] request.")
+
+        api.queryInvoiceData(invoiceNumber, entity).onComplete {
+          case Success(value) =>
+            log.debug("Finished [query-invoice-data] request.")
+            replyTo ! value
+          case Failure(exception) =>
+            log.error(
+              "Failed [query-invoice-data] request due to [{}] with message [{}]!",
+              exception.getClass.getName,
+              exception.getMessage
+            )
+        }
+
+        Behaviors.same
       case Protocol.QueryTaxpayer(replyTo, taxNumber, entity) =>
         log.trace("Received [query-taxpayer] request.")
 

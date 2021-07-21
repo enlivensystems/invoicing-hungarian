@@ -196,6 +196,26 @@ class suiteRequests extends AnyFunSpec with invoicingSuite {
         completed.get() shouldEqual testCount
       }
     }
+
+    it("should be able to get invoice data,") {
+      smartInvoices1.foreach {
+        smartInvoice =>
+          eventually {
+            val response = invoicing
+              .queryInvoiceData(
+                smartInvoice.asInstanceOf[Invoices.Smart].number,
+                entity,
+                20.seconds
+              )(
+                20.seconds
+              )
+              .get
+
+            val transactionID = response.invoiceDataResult.get.auditData.transactionId.get
+            transactionIDs.contains(transactionID) shouldEqual true
+          }
+      }
+    }
   }
 
 }
