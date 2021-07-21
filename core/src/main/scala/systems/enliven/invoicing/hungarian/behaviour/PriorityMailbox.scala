@@ -9,7 +9,8 @@ class PriorityMailbox(settings: Settings, config: Config)
  extends UnboundedStablePriorityMailbox(
    PriorityGenerator {
      case _: Protocol.PriorityManageInvoice => 0
-     case _: Protocol.ManageInvoice         => 1
-     case _                                 => 2
+     case _: Protocol.ManageInvoiceFailed   => 1
+     case _: Protocol.ManageInvoice         => 2
+     case _                                 => 3
    }
  )

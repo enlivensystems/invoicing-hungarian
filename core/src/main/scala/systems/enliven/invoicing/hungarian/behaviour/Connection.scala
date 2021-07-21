@@ -69,12 +69,12 @@ object Connection {
       entity: Entity)
      extends Command
 
-    final case class PriorityManageInvoice(
-      token: Token,
-      manageInvoice: ManageInvoice)
+    final case class PriorityManageInvoice(token: Token, manageInvoice: ManageInvoice)
      extends PrivateCommand
 
-    final case class TokenLoadFailed(throwable: Throwable) extends PrivateCommand
+    final case class ManageInvoiceFailed(throwable: Throwable, manageInvoice: ManageInvoice)
+     extends PrivateCommand
+
   }
 
 }
@@ -197,7 +197,11 @@ class Connection private (
               new Token(response, entity.credentials.exchangeKey),
               Protocol.ManageInvoice(replyTo, invoices, entity)
             )
-          case Failure(throwable: Throwable) => Protocol.TokenLoadFailed(throwable)
+          case Failure(throwable: Throwable) =>
+            Protocol.ManageInvoiceFailed(
+              throwable,
+              Protocol.ManageInvoice(replyTo, invoices, entity)
+            )
         }
 
         Behaviors.same
@@ -216,7 +220,11 @@ class Connection private (
             replyTo ! Failure(throwable)
         }
         Behaviors.same
-      case Protocol.TokenLoadFailed(_) =>
+      case Protocol.ManageInvoiceFailed(
+            throwable,
+            Protocol.ManageInvoice(replyTo, _, _)
+          ) =>
+        replyTo ! Failure(throwable)
         Behaviors.same
       case _ =>
         Behaviors.unhandled
