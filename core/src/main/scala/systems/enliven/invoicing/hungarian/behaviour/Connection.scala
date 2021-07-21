@@ -121,10 +121,10 @@ class Connection private (
         api.queryTaxpayer(taxNumber, entity).onComplete {
           case Success(value) =>
             log.debug("Finished [query-taxpayer] request.")
-            replyTo ! value.map(Taxpayer.create(_))
+            replyTo ! value.map(Taxpayer.create)
           case Failure(exception) =>
             log.error(
-              "Failed [query-transaction-status] request due to [{}] with message [{}]!",
+              "Failed [query-taxpayer] request due to [{}] with message [{}]!",
               exception.getClass.getName,
               exception.getMessage
             )
