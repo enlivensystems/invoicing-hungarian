@@ -16,7 +16,7 @@ object Dependencies {
     "com.typesafe.akka" %% "akka-actor-typed" % "2.6.16",
     "org.apache.commons" % "commons-lang3" % "3.12.0",
     "org.scala-lang.modules" %% "scala-xml" % "1.3.0",
-    "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2",
+    "org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.0",
     "net.databinder.dispatch" %% "dispatch-core" % "0.13.4",
     "javax.xml.bind" % "jaxb-api" % "2.3.1",
     "com.softwaremill.retry" %% "retry" % "0.3.3",
