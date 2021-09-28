@@ -84,16 +84,16 @@ class suiteRequests extends AnyFunSpec with invoicingSuite {
   var transactionIDs: Seq[String] = Seq.empty
 
   val smartInvoices1: Seq[Invoices.Invoice] =
-    TestDataGenerator.testRecipients.map(createSmartInvoice(_, VAT.Hungarian.Standard))
+    TestDataGenerator.testRecipients.map(createSmartInvoice(_, VAT.Hungarian.Standard()))
 
   val smartInvoices2: Seq[Invoices.Invoice] =
-    TestDataGenerator.testRecipients.map(createSmartInvoice(_, VAT.Hungarian.AAM))
+    TestDataGenerator.testRecipients.map(createSmartInvoice(_, VAT.Hungarian.AAM()))
 
   val smartInvoices3: Seq[Invoices.Invoice] =
-    TestDataGenerator.testRecipients.map(createSmartInvoice(_, VAT.Hungarian.EUFAD37))
+    TestDataGenerator.testRecipients.map(createSmartInvoice(_, VAT.Hungarian.EUFAD37()))
 
   val smartInvoices4: Seq[Invoices.Invoice] =
-    TestDataGenerator.testRecipients.map(createSmartInvoice(_, VAT.Hungarian.HO))
+    TestDataGenerator.testRecipients.map(createSmartInvoice(_, VAT.Hungarian.HO()))
 
   val invoices: Invoices = Invoices(
     Invoices.Raw(Invoices.Operation.create, DatatypeConverter.parseBase64Binary("something")) ::
