@@ -3,29 +3,29 @@ package systems.enliven.invoicing.hungarian.api.data
 import scalaxb.DataRecord
 import systems.enliven.invoicing.hungarian.generated.{VatRateType, _}
 
-sealed abstract class VAT(val rate: Int, val countryCode: String) extends Serializable {
-  def toCode: String = countryCode + "-" + toString
+sealed abstract class VAT(val rate: Int, val countryCode: String, val localCode: String) extends Serializable {
+  def globalCode: String = countryCode + "-" + localCode
 }
 
 object VAT {
 
   object Hungarian {
-    final case class Standard() extends VAT(27, "HU")
+    final case class Standard() extends VAT(27, "HU", "Standard")
 
     /**
       * Alanyi adómentesség
       */
-    final case class AAM() extends VAT(0, "HU")
+    final case class AAM() extends VAT(0, "HU", "AAM")
 
     /**
       * Áfa törvény 37. paragrafusa alapján másik tagállamban teljesített, fordítottan adózó ügylet
       */
-    final case class EUFAD37() extends VAT(0, "HU")
+    final case class EUFAD37() extends VAT(0, "HU", "EUFAD37")
 
     /**
       * Harmadik országban teljesített ügylet
       */
-    final case class HO() extends VAT(0, "HU")
+    final case class HO() extends VAT(0, "HU", "HO")
 
   }
 
@@ -39,7 +39,7 @@ object VAT {
   def test: VAT = vats(scala.util.Random.nextInt(vats.size))
 
   def fromCode(code: String): VAT =
-    vats.find(_.toCode == code)
+    vats.find(_.globalCode == code)
       .getOrElse(throw new NoSuchElementException(s"No value found for [$code]"))
 
   implicit class APIConvert(vat: VAT) {
