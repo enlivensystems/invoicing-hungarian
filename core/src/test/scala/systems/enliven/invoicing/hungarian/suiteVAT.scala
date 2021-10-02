@@ -12,5 +12,4 @@ class suiteVAT extends AnyFunSpec with baseSuite {
     VAT.Hungarian.HO().globalCode shouldEqual "HU-HO"
   }
 
-
 }

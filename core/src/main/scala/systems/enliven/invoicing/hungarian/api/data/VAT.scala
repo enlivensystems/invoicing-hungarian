@@ -3,7 +3,8 @@ package systems.enliven.invoicing.hungarian.api.data
 import scalaxb.DataRecord
 import systems.enliven.invoicing.hungarian.generated.{VatRateType, _}
 
-sealed abstract class VAT(val rate: Int, val countryCode: String, val localCode: String) extends Serializable {
+sealed abstract class VAT(val rate: Int, val countryCode: String, val localCode: String)
+ extends Serializable {
   def globalCode: String = countryCode + "-" + localCode
 }
 
