@@ -221,7 +221,7 @@ abstract class Configuration[
   def objectList(key: String): List[collection.Map[String, String]] =
     try {
       configuration.getObjectList(key).iterator().asScala.map {
-        _.unwrapped().asScala.mapValues(_.toString)
+        _.unwrapped().asScala.mapValues(_.toString).toMap
       }.toList
     } catch {
       case t: Throwable =>

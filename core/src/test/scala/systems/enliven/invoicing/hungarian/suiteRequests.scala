@@ -9,6 +9,7 @@ import systems.enliven.invoicing.hungarian.api.recipient.Recipient
 import java.util.Date
 import java.util.concurrent.atomic.AtomicInteger
 import javax.xml.bind.DatatypeConverter
+import scala.collection.parallel.CollectionConverters.RangeIsParallelizable
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
@@ -181,7 +182,8 @@ class suiteRequests extends AnyFunSpec with invoicingSuite {
     it("should be able to handle many manage-invoice calls,") {
       val testCount: Int = 100
       val completed: AtomicInteger = new AtomicInteger(0)
-      (1 to testCount).par
+      (1 to testCount)
+        .par
         .map(
           _ => invoicing.invoices(invoices, entity)(40.seconds)
         )

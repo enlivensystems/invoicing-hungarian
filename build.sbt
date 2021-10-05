@@ -7,20 +7,19 @@ import sbtrelease.ReleasePlugin.autoImport.{releaseProcess, releaseVersionBump}
 lazy val commonSettings = Seq(
   organizationName := "Enliven Systems Kft.",
   organization := "systems.enliven.invoicing.hungarian",
-  scalaVersion := "2.12.15", // scala-steward:off
+  scalaVersion := "2.13.6",
   semanticdbEnabled := true,
   semanticdbVersion := scalafixSemanticdb.revision,
   addCompilerPlugin(scalafixSemanticdb),
   scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.5.0",
   scalacOptions ++= List(
     "-Yrangepos",
-    "-Ywarn-unused-import",
     "-encoding",
     "UTF-8",
-    "-target:jvm-1.8",
     "-deprecation",
     "-feature",
     "-unchecked",
+    "-Ywarn-unused",
     "-language:implicitConversions",
     "-language:postfixOps"
   ),
