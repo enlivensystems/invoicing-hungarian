@@ -17,7 +17,7 @@ Add as a dependency:
 ```
 
 (For current and released version see `version.sbt`. `version.sbt` contains the next patch release.
-For example, if you see version `1.0.2` there, the current release is `1.0.1`.)
+For example, if you see version `1.0.54` there, the current release is `1.0.53`.)
 
 Please note that currently we only provide Scala 2.12 builds. Drop us a message in case you need
 a build for Scala 2.11 or Scala 2.13. Java port is possible. See more info below.
