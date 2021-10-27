@@ -1,7 +1,8 @@
 package systems.enliven.invoicing.hungarian.api.recipient
 
 import scalaxb.DataRecord
-import systems.enliven.invoicing.hungarian.api.data.Address
+import systems.enliven.invoicing.hungarian.api.data.{Address, Validation}
+import systems.enliven.invoicing.hungarian.core.requirement.StringRequirement._
 import systems.enliven.invoicing.hungarian.generated.{
   AddressType,
   CustomerInfoType,
@@ -17,10 +18,14 @@ case class NonTaxableNonPrivatePerson(
   address: Address,
   bankAccountNumber: Option[String])
  extends Recipient {
-  require(name.nonEmpty)
-  require(bankAccountNumber.forall(_.matches(
-    """[0-9]{8}[-][0-9]{8}[-][0-9]{8}|[0-9]{8}[-][0-9]{8}|[A-Z]{2}[0-9]{2}[0-9A-Za-z]{11,30}"""
-  )))
+
+  name.named("name").nonEmpty.trimmed
+
+  bankAccountNumber.named("bankAccountNumber").nonEmpty.trimmed.matchesAnyOf(
+    Validation.bankAccountNumberRegex1.regex,
+    Validation.bankAccountNumberRegex2.regex,
+    Validation.bankAccountNumberRegex3.regex
+  )
 
   /**
     * In this case, the customer's name and address (customerName, customerAddress) must be specified.

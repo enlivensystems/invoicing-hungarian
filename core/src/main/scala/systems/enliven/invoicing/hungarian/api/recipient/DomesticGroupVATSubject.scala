@@ -1,7 +1,8 @@
 package systems.enliven.invoicing.hungarian.api.recipient
 
 import scalaxb.DataRecord
-import systems.enliven.invoicing.hungarian.api.data.{Address, TaxNumber}
+import systems.enliven.invoicing.hungarian.api.data.{Address, TaxNumber, Validation}
+import systems.enliven.invoicing.hungarian.core.requirement.StringRequirement._
 import systems.enliven.invoicing.hungarian.generated.{
   AddressType,
   CustomerInfoType,
@@ -23,12 +24,16 @@ case class DomesticGroupVATSubject(
   bankAccountNumber: Option[String]
 )
  extends Recipient {
-  require(groupTaxNumber.vatCode.forall(_.equals("5")))
-  require(memberTaxNumber.vatCode.forall(_.equals("4")))
-  require(name.nonEmpty)
-  require(bankAccountNumber.forall(_.matches(
-    """[0-9]{8}[-][0-9]{8}[-][0-9]{8}|[0-9]{8}[-][0-9]{8}|[A-Z]{2}[0-9]{2}[0-9A-Za-z]{11,30}"""
-  )))
+
+  require(groupTaxNumber.taxCode.forall(_.equals("5")))
+  require(memberTaxNumber.taxCode.forall(_.equals("4")))
+  name.named("name").nonEmpty.trimmed
+
+  bankAccountNumber.named("bankAccountNumber").nonEmpty.trimmed.matchesAnyOf(
+    Validation.bankAccountNumberRegex1.regex,
+    Validation.bankAccountNumberRegex2.regex,
+    Validation.bankAccountNumberRegex3.regex
+  )
 
   /**
     * If the customer is a domestic group VAT subject, then the customer’s tax number should be
@@ -44,12 +49,12 @@ case class DomesticGroupVATSubject(
           None,
           Some("customerTaxNumber"),
           CustomerTaxNumberType(
-            taxpayerId = groupTaxNumber.taxPayerID,
-            vatCode = groupTaxNumber.vatCode,
+            taxpayerId = groupTaxNumber.taxpayerID,
+            vatCode = groupTaxNumber.taxCode,
             countyCode = groupTaxNumber.countyCode,
             groupMemberTaxNumber = Some(TaxNumberType(
-              taxpayerId = memberTaxNumber.taxPayerID,
-              vatCode = memberTaxNumber.vatCode,
+              taxpayerId = memberTaxNumber.taxpayerID,
+              vatCode = memberTaxNumber.taxCode,
               countyCode = memberTaxNumber.countyCode
             ))
           )

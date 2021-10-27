@@ -1,14 +1,19 @@
 package systems.enliven.invoicing.hungarian.api.recipient
 
+import systems.enliven.invoicing.hungarian.api.data.Validation
+import systems.enliven.invoicing.hungarian.core.requirement.StringRequirement._
 import systems.enliven.invoicing.hungarian.generated.{CustomerInfoType, PRIVATE_PERSON}
 
 /**
   * Non-VAT taxable natural person (domestic or foreign)
   */
 case class PrivatePerson(bankAccountNumber: Option[String]) extends Recipient {
-  require(bankAccountNumber.forall(_.matches(
-    """[0-9]{8}[-][0-9]{8}[-][0-9]{8}|[0-9]{8}[-][0-9]{8}|[A-Z]{2}[0-9]{2}[0-9A-Za-z]{11,30}"""
-  )))
+
+  bankAccountNumber.named("bankAccountNumber").nonEmpty.trimmed.matchesAnyOf(
+    Validation.bankAccountNumberRegex1.regex,
+    Validation.bankAccountNumberRegex2.regex,
+    Validation.bankAccountNumberRegex3.regex
+  )
 
   /**
     * If the customer is a private individual (customerVatStatus = PRIVATE_PERSON),

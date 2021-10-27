@@ -2,7 +2,8 @@ package systems.enliven.invoicing.hungarian.api.recipient
 
 import scalaxb.DataRecord
 import scalaxb.DataRecord.__StringXMLFormat
-import systems.enliven.invoicing.hungarian.api.data.Address
+import systems.enliven.invoicing.hungarian.api.data.{Address, Validation}
+import systems.enliven.invoicing.hungarian.core.requirement.StringRequirement._
 import systems.enliven.invoicing.hungarian.generated.{
   AddressType,
   CustomerInfoType,
@@ -15,16 +16,20 @@ import systems.enliven.invoicing.hungarian.generated.{
   *  Taxable person registered in a non-EU country
   */
 case class NonEUTaxablePerson(
-  thirdStateTaxId: String,
+  thirdStateTaxNumber: String,
   name: String,
   address: Address,
   bankAccountNumber: Option[String])
  extends Recipient {
-  require(thirdStateTaxId.nonEmpty)
-  require(name.nonEmpty)
-  require(bankAccountNumber.forall(_.matches(
-    """[0-9]{8}[-][0-9]{8}[-][0-9]{8}|[0-9]{8}[-][0-9]{8}|[A-Z]{2}[0-9]{2}[0-9A-Za-z]{11,30}"""
-  )))
+
+  thirdStateTaxNumber.named("thirdStateTaxNumber").nonEmpty.trimmed
+  name.named("name").nonEmpty.trimmed
+
+  bankAccountNumber.named("bankAccountNumber").nonEmpty.trimmed.matchesAnyOf(
+    Validation.bankAccountNumberRegex1.regex,
+    Validation.bankAccountNumberRegex2.regex,
+    Validation.bankAccountNumberRegex3.regex
+  )
 
   /**
     * The customer is registered in a non-EU country, and does not participate in the transaction as taxable
@@ -37,7 +42,7 @@ case class NonEUTaxablePerson(
     CustomerInfoType(
       customerVatStatus = OTHERValue2,
       customerVatData = Some(CustomerVatDataType(
-        DataRecord[String](None, Some("thirdStateTaxId"), thirdStateTaxId)
+        DataRecord[String](None, Some("thirdStateTaxId"), thirdStateTaxNumber)
       )),
       customerName = Some(name),
       customerAddress = Some(AddressType(

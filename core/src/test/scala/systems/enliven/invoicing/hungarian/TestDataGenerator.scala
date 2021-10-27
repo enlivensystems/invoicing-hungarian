@@ -94,7 +94,7 @@ object TestDataGenerator {
   def euTaxablePersonTestCases: Seq[EUTaxablePerson] =
     for (bankAccountNumber <- testBankAccountNumbers) yield {
       EUTaxablePerson(
-        communityVatNumber =
+        communityTaxNumber =
           RandomStringUtils.randomAlphabetic(2).toUpperCase +
             RandomStringUtils.randomAlphanumeric(2, 13).toUpperCase,
         name = testName,
@@ -106,7 +106,7 @@ object TestDataGenerator {
   def nonEUTaxablePerson: Seq[NonEUTaxablePerson] =
     for (bankAccountNumber <- testBankAccountNumbers) yield {
       NonEUTaxablePerson(
-        thirdStateTaxId = RandomStringUtils.randomAlphanumeric(10, 20).toUpperCase,
+        thirdStateTaxNumber = RandomStringUtils.randomAlphanumeric(10, 20).toUpperCase,
         name = testName,
         address = testAddress,
         bankAccountNumber = bankAccountNumber

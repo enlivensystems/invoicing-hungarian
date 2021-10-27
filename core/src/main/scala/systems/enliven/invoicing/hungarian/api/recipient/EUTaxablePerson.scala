@@ -2,7 +2,8 @@ package systems.enliven.invoicing.hungarian.api.recipient
 
 import scalaxb.DataRecord
 import scalaxb.DataRecord.__StringXMLFormat
-import systems.enliven.invoicing.hungarian.api.data.Address
+import systems.enliven.invoicing.hungarian.api.data.{Address, Validation}
+import systems.enliven.invoicing.hungarian.core.requirement.StringRequirement._
 import systems.enliven.invoicing.hungarian.generated.{
   AddressType,
   CustomerInfoType,
@@ -15,16 +16,22 @@ import systems.enliven.invoicing.hungarian.generated.{
   *  Taxable person registered in another EC Member State
   */
 case class EUTaxablePerson(
-  communityVatNumber: String,
+  communityTaxNumber: String,
   name: String,
   address: Address,
   bankAccountNumber: Option[String])
  extends Recipient {
-  require(communityVatNumber.matches("""[A-Z]{2}[0-9A-Z]{2,13}"""))
-  require(name.nonEmpty)
-  require(bankAccountNumber.forall(_.matches(
-    """[0-9]{8}[-][0-9]{8}[-][0-9]{8}|[0-9]{8}[-][0-9]{8}|[A-Z]{2}[0-9]{2}[0-9A-Za-z]{11,30}"""
-  )))
+
+  communityTaxNumber.named("communityTaxNumber").nonEmpty.trimmed
+    .matches(Validation.communityTaxNumberParser.regex)
+
+  name.named("name").nonEmpty.trimmed
+
+  bankAccountNumber.named("bankAccountNumber").nonEmpty.trimmed.matchesAnyOf(
+    Validation.bankAccountNumberRegex1.regex,
+    Validation.bankAccountNumberRegex2.regex,
+    Validation.bankAccountNumberRegex3.regex
+  )
 
   /**
     * In this case, the customer's name and address (customerName, customerAddress) must be specified.
@@ -45,7 +52,7 @@ case class EUTaxablePerson(
     CustomerInfoType(
       customerVatStatus = OTHERValue2,
       customerVatData = Some(CustomerVatDataType(
-        DataRecord[String](None, Some("communityVatNumber"), communityVatNumber)
+        DataRecord[String](None, Some("communityVatNumber"), communityTaxNumber)
       )),
       customerName = Some(name),
       customerAddress = Some(AddressType(
