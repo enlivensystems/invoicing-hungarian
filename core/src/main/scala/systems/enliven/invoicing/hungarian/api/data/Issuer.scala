@@ -11,7 +11,16 @@ case class Issuer(
   communityTaxNumber: String,
   name: String,
   address: Address,
-  bankAccountNumber: String) {
+  bankAccountNumber: String,
+  /**
+    * "Kisadózó".
+    */
+  smallBusiness: Boolean,
+  /**
+    * "Pénzforgalmi elszámolás".
+    */
+  cashSettlement: Boolean
+) {
   taxNumber.named("taxNumber").nonEmpty.trimmed
   taxCode.named("taxCode")
     .nonEmpty.trimmed.matches(Issuer.taxCodeRegex.regex)

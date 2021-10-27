@@ -39,7 +39,9 @@ class suiteRequests extends AnyFunSpec with invoicingSuite {
           streetName = "W",
           publicPlaceCategory = "W"
         ),
-        bankAccountNumber = "00000000-00000000-00000000"
+        bankAccountNumber = "00000000-00000000-00000000",
+        smallBusiness = true,
+        cashSettlement = false
       ),
       recipient = recipient,
       operation = Invoices.Operation.create,

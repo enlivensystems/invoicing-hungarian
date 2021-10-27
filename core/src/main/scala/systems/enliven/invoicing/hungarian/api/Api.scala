@@ -421,14 +421,14 @@ object Api extends XMLProtocol with Logger {
                             invoiceDeliveryPeriodEnd = None,
                             invoiceAccountingDeliveryDate = None,
                             periodicalSettlement = Some(invoice.periodical),
-                            smallBusinessIndicator = None,
+                            smallBusinessIndicator = Some(invoice.issuer.smallBusiness),
                             currencyCode = invoice.currencyCode,
                             exchangeRate = invoice.exchangeRate,
                             selfBillingIndicator = None,
                             paymentMethod = Some(CARD),
                             paymentDate = Some(DatatypeFactory.newInstance
                               .newXMLGregorianCalendar(simpleDateFormat.format(invoice.paid))),
-                            cashAccountingIndicator = None,
+                            cashAccountingIndicator = Some(invoice.issuer.cashSettlement),
                             invoiceAppearance = ELECTRONIC,
                             conventionalInvoiceInfo = None,
                             additionalInvoiceData = Seq.empty
