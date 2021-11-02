@@ -11,7 +11,7 @@ object Dependencies {
     "org.slf4j" % "slf4j-log4j12" % "1.7.32",
     "com.typesafe.akka" %% "akka-actor" % "2.6.17",
     "com.typesafe.akka" %% "akka-stream" % "2.6.17",
-    "com.typesafe.akka" %% "akka-http" % "10.2.6",
+    "com.typesafe.akka" %% "akka-http" % "10.2.7",
     "com.typesafe.akka" %% "akka-slf4j" % "2.6.17",
     "com.typesafe.akka" %% "akka-actor-typed" % "2.6.17",
     "org.apache.commons" % "commons-lang3" % "3.12.0",
