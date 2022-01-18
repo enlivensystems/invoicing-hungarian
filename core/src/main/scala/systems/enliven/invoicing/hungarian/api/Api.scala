@@ -17,7 +17,6 @@ import systems.enliven.invoicing.hungarian.generated.{
   CREATE,
   DetailedAddressType,
   GeneralErrorResponse,
-  INBOUND,
   InvoiceDataType,
   InvoiceDetailType,
   InvoiceHeadType,
