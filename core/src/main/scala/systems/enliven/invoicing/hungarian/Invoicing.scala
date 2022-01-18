@@ -10,11 +10,14 @@ import systems.enliven.invoicing.hungarian.behaviour.{Connection, Guardian}
 import systems.enliven.invoicing.hungarian.core.ConfigLoader.Loader
 import systems.enliven.invoicing.hungarian.core.{Configuration, Logger}
 import systems.enliven.invoicing.hungarian.generated.{
+  InvoiceDirectionType,
   ManageInvoiceResponse,
   QueryInvoiceDataResponse,
+  QueryInvoiceDigestResponse,
   QueryTransactionStatusResponse
 }
 
+import java.util.Date
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success, Try}
@@ -158,5 +161,31 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
     implicit askTimeout: Timeout
   ): Try[QueryInvoiceDataResponse] =
     Await.result(queryInvoiceData(invoiceNumber, entity)(askTimeout), timeout)
+
+  def digest(
+    entity: Entity,
+    direction: InvoiceDirectionType,
+    fromDate: Date,
+    toDate: Date,
+    timeout: FiniteDuration
+  )(implicit askTimeout: Timeout): Try[Seq[QueryInvoiceDigestResponse]] =
+    Await.result(digest(entity, direction, fromDate, toDate)(askTimeout), timeout)
+
+  def digest(
+    entity: Entity,
+    direction: InvoiceDirectionType,
+    fromDate: Date,
+    toDate: Date
+  )(implicit askTimeout: Timeout): Future[Try[Seq[QueryInvoiceDigestResponse]]] =
+    connection.get.ask[Try[Seq[QueryInvoiceDigestResponse]]](
+      replyTo =>
+        Connection.Protocol.QueryInvoiceDigest(
+          replyTo,
+          entity,
+          direction,
+          fromDate,
+          toDate
+        )
+    )
 
 }

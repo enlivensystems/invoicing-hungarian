@@ -4,8 +4,7 @@ import systems.enliven.invoicing.hungarian.core.requirement.StringRequirement._
 
 case class Entity(
   credentials: Entity.Credentials,
-  taxNumber: String
-) {
+  taxNumber: String) {
   taxNumber.named("taxNumber").matches(Validation.hungarianTaxpayerIDRegex.regex)
 }
 

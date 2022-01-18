@@ -6,6 +6,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.Accept
 import akka.util.ByteString
 import scalaxb.{Base64Binary, DataRecord, XMLFormat}
+import systems.enliven.invoicing.hungarian.api.Api.simpleDateFormat
 import systems.enliven.invoicing.hungarian.api.data.{Entity, Issuer, Item, TaxRateSummary}
 import systems.enliven.invoicing.hungarian.api.recipient.Recipient
 import systems.enliven.invoicing.hungarian.core
@@ -16,6 +17,7 @@ import systems.enliven.invoicing.hungarian.generated.{
   CREATE,
   DetailedAddressType,
   GeneralErrorResponse,
+  INBOUND,
   InvoiceDataType,
   InvoiceDetailType,
   InvoiceHeadType,
@@ -122,6 +124,55 @@ class Api()(
             status match {
               case StatusCodes.OK =>
                 Api.parse[QueryTaxpayerResponse](response)
+              case _ =>
+                val errorResponse = Api.parse[GeneralErrorResponse](Fixer.fixResponse(response))
+                throw new core.Exception(Api.format(errorResponse))
+            }
+          }
+      }
+  }
+
+  def queryInvoiceDigest(
+    entity: Entity,
+    page: Int = 1,
+    direction: InvoiceDirectionType,
+    fromDate: Date,
+    toDate: Date
+  ): Future[Try[QueryInvoiceDigestResponse]] = {
+    require(page > 0)
+
+    val timestamp = Instant.now()
+    val requestID: String = builder.nextRequestID
+
+    val payload = QueryInvoiceDigestRequest(
+      builder.buildBasicHeader(requestID, timestamp),
+      builder.buildUserHeader(requestID, timestamp, entity),
+      buildSoftware,
+      page,
+      direction,
+      InvoiceQueryParamsType(
+        MandatoryQueryParamsType(
+          DataRecord[DateIntervalParamType](
+            namespace = None,
+            key = Some("invoiceIssueDate"),
+            value = DateIntervalParamType(
+              DatatypeFactory.newInstance
+                .newXMLGregorianCalendar(simpleDateFormat.format(fromDate)),
+              DatatypeFactory.newInstance
+                .newXMLGregorianCalendar(simpleDateFormat.format(toDate))
+            )
+          )
+        )
+      )
+    )
+
+    request("queryInvoiceDigest", Api.writeRequest[QueryInvoiceDigestRequest](payload))
+      .map {
+        case (status: StatusCode, response: String) =>
+          Try {
+            status match {
+              case StatusCodes.OK =>
+                Api.parse[QueryInvoiceDigestResponse](response)
               case _ =>
                 val errorResponse = Api.parse[GeneralErrorResponse](Fixer.fixResponse(response))
                 throw new core.Exception(Api.format(errorResponse))
@@ -242,6 +293,9 @@ class Api()(
 
 object Api extends XMLProtocol with Logger {
 
+  protected[api] val simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd")
+  simpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"))
+
   private def parse[T](data: String)(implicit format: XMLFormat[T]): T =
     scalaxb.fromXML[T](scala.xml.XML.loadString(data))
 
@@ -359,8 +413,6 @@ object Api extends XMLProtocol with Logger {
 
           override def base64: Base64Binary = {
             val invoice = this
-            val simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd")
-            simpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"))
 
             val invoiceData = Api.writeData[InvoiceDataType](
               InvoiceDataType(

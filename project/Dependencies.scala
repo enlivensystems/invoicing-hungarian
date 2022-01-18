@@ -3,8 +3,6 @@ import sbt._
 object Dependencies {
 
   val coreDependencies = Seq(
-    "org.scala-lang" % "scala-library" % "2.13.8",
-    "org.scala-lang" % "scala-compiler" % "2.13.8",
     "org.scalatest" %% "scalatest" % "3.3.0-SNAP3" % "test",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4",
     "org.slf4j" % "slf4j-api" % "1.7.33",
@@ -21,7 +19,8 @@ object Dependencies {
     "com.softwaremill.retry" %% "retry" % "0.3.3",
     "org.bouncycastle" % "bcprov-jdk15on" % "1.70",
     "com.github.javafaker" % "javafaker" % "1.0.2" % "test",
-    "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4"
+    "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4",
+    "joda-time" % "joda-time" % "2.10.13"
   )
 
 }

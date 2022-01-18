@@ -11,12 +11,15 @@ import systems.enliven.invoicing.hungarian.behaviour.Connection.Protocol
 import systems.enliven.invoicing.hungarian.core
 import systems.enliven.invoicing.hungarian.core.{Configuration, Logger}
 import systems.enliven.invoicing.hungarian.generated.{
+  InvoiceDirectionType,
   ManageInvoiceResponse,
   QueryInvoiceDataResponse,
+  QueryInvoiceDigestResponse,
   QueryTransactionStatusResponse,
   TokenExchangeResponse
 }
 
+import java.util.Date
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success, Try}
@@ -54,6 +57,14 @@ object Connection {
       replyTo: ActorRef[Try[QueryInvoiceDataResponse]],
       invoiceNumber: String,
       entity: Entity)
+     extends Command
+
+    final case class QueryInvoiceDigest(
+      replyTo: ActorRef[Try[Seq[QueryInvoiceDigestResponse]]],
+      entity: Entity,
+      direction: InvoiceDirectionType,
+      fromDate: Date,
+      toDate: Date)
      extends Command
 
     final case class QueryTransactionStatus(
@@ -161,6 +172,53 @@ class Connection private (
                   throwable
               }
             )
+        }
+
+        Behaviors.same
+      case Protocol.QueryInvoiceDigest(replyTo, entity, direction, fromDate, toDate) =>
+        log.trace(
+          "Received [query-invoice-digest] request."
+        )
+
+        def doQuery(page: Int)(
+          partialResults: Seq[QueryInvoiceDigestResponse]
+        ): Future[Try[Seq[QueryInvoiceDigestResponse]]] =
+          api
+            .queryInvoiceDigest(entity, page, direction, fromDate, toDate)
+            .flatMap {
+              case Failure(exception) => Future.failed(exception)
+              case Success(value) =>
+                log.trace(
+                  "Received result for page [{}] with a total of [{}] pages available.",
+                  value.invoiceDigestResult.currentPage,
+                  value.invoiceDigestResult.availablePage
+                )
+                if (value.invoiceDigestResult.currentPage < value.invoiceDigestResult.availablePage) {
+                  val nextPage = value.invoiceDigestResult.currentPage + 1
+                  log.trace("Running query for the next page [{}].", nextPage)
+                  val query = doQuery(nextPage)(partialResults :+ value)
+                  query.onComplete {
+                    case Success(_) =>
+                      log.debug("Finished [query-invoice-digest] request.")
+                    case Failure(exception) =>
+                      log.error(
+                        "Failed [query-invoice-digest] request " +
+                          "due to [{}] with message [{}]!",
+                        exception.getClass.getName,
+                        exception.getMessage
+                      )
+                  }
+                  query
+                } else {
+                  Future.successful(Success(partialResults :+ value))
+                }
+            }
+
+        val query = doQuery(page = 1)(Seq.empty)
+        query.onComplete {
+          case Success(value) =>
+            log.trace("Collected results for all pages, returning results.")
+            replyTo ! value
         }
 
         Behaviors.same

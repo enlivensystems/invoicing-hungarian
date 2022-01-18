@@ -7,7 +7,7 @@ import sbtrelease.ReleasePlugin.autoImport.{releaseProcess, releaseVersionBump}
 lazy val commonSettings = Seq(
   organizationName := "Enliven Systems Kft.",
   organization := "systems.enliven.invoicing.hungarian",
-  scalaVersion := "2.13.6",
+  scalaVersion := "2.13.8",
   semanticdbEnabled := true,
   semanticdbVersion := scalafixSemanticdb.revision,
   addCompilerPlugin(scalafixSemanticdb),
@@ -83,7 +83,7 @@ lazy val commonSettings = Seq(
 lazy val core =
   (project in file("core")).settings(commonSettings: _*).enablePlugins(ScalaxbPlugin).settings(
     name := "core",
-    description := "Core Hungarian Invoicing API to interface with NAV Online Invoice API 2.0.",
+    description := "Core Hungarian Invoicing API to interface with NAV Online Invoice API 3.0.",
     libraryDependencies ++= coreDependencies,
     Compile / scalaxb / scalaxbDispatchVersion := "0.13.4",
     Compile / scalaxb / scalaxbPackageName := "systems.enliven.invoicing.hungarian.generated"
