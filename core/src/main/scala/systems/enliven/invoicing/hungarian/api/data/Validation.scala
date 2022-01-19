@@ -3,9 +3,6 @@ package systems.enliven.invoicing.hungarian.api.data
 import scala.util.matching.Regex
 
 object Validation {
-  final val hungarianTaxNumberParser: Regex = """([0-9]{8})-([1-5])-([0-9]{2})""".r
-  final val communityTaxNumberParser: Regex = """([A-Z]{2})([0-9A-Z]{2,13})""".r
-
   final val hungarianTaxpayerIDRegex: Regex = """[0-9]{8}""".r
   final val hungarianTaxCodeRegex: Regex = """[1-5]""".r
 
@@ -16,6 +13,16 @@ object Validation {
 
   final val communityCountryCodeRegex: Regex = """[A-Z]{2}""".r
   final val communityTaxpayerIDRegex: Regex = """[0-9A-Z]{2,13}""".r
+
+  final val hungarianTaxNumberParser: Regex =
+    new Regex(
+      s"""($hungarianTaxpayerIDRegex)-($hungarianTaxCodeRegex)-($hungarianCountyCodeRegex)"""
+    )
+
+  final val communityTaxNumberParser: Regex =
+    new Regex(
+      s"""($communityCountryCodeRegex)($communityTaxpayerIDRegex)"""
+    )
 
   final val NAVLoginNameRegex: Regex = """[a-zA-Z0-9]{6,15}""".r
 
