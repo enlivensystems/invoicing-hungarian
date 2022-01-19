@@ -1,7 +1,8 @@
 package systems.enliven.invoicing.hungarian
 
+import com.mifmif.common.regex.Generex
 import org.apache.commons.lang3.RandomStringUtils
-import systems.enliven.invoicing.hungarian.api.data.{Address, TaxNumber}
+import systems.enliven.invoicing.hungarian.api.data.{Address, TaxNumber, Validation}
 import systems.enliven.invoicing.hungarian.api.recipient.{
   DomesticGroupVATSubject,
   DomesticTaxablePerson,
@@ -17,21 +18,20 @@ object TestDataGenerator {
 
   private def testName: String = faker.name().fullName()
 
-  private def testTaxPayerID: String = RandomStringUtils.randomNumeric(8)
-  private def testCountyCode: String = RandomStringUtils.randomNumeric(2)
+  private def testTaxPayerID: String =
+    new Generex(Validation.hungarianTaxpayerIDRegex.regex).random()
+
+  private def testCountyCode: String =
+    new Generex(Validation.hungarianCountyCodeRegex.regex).random()
 
   private def testBankAccountNumberA: String =
-    RandomStringUtils.randomNumeric(8) + "-" +
-      RandomStringUtils.randomNumeric(8) + "-" +
-      RandomStringUtils.randomNumeric(8)
+    new Generex(Validation.bankAccountNumberRegex1.regex).random()
 
   private def testBankAccountNumberB: String =
-    RandomStringUtils.randomNumeric(8) + "-" + RandomStringUtils.randomNumeric(8)
+    new Generex(Validation.bankAccountNumberRegex2.regex).random()
 
   private def testBankAccountNumberC: String =
-    RandomStringUtils.randomAlphabetic(2).toUpperCase +
-      RandomStringUtils.randomNumeric(2) +
-      RandomStringUtils.randomAlphanumeric(11, 30)
+    new Generex(Validation.bankAccountNumberRegex3.regex).random()
 
   private def testBankAccountNumbers: Seq[Option[String]] =
     Seq(
@@ -54,7 +54,7 @@ object TestDataGenerator {
 
   def testAddress: Address =
     Address(
-      countryCode = RandomStringUtils.randomAlphabetic(2).toUpperCase,
+      countryCode = new Generex(Validation.countryCodeRegex.regex).random(),
       region = None,
       postalCode = RandomStringUtils.randomAlphanumeric(4, 10).toUpperCase,
       city = faker.address().city(),
@@ -94,9 +94,7 @@ object TestDataGenerator {
   def euTaxablePersonTestCases: Seq[EUTaxablePerson] =
     for (bankAccountNumber <- testBankAccountNumbers) yield {
       EUTaxablePerson(
-        communityTaxNumber =
-          RandomStringUtils.randomAlphabetic(2).toUpperCase +
-            RandomStringUtils.randomAlphanumeric(2, 13).toUpperCase,
+        communityTaxNumber = new Generex(Validation.communityTaxNumberParser.regex).random(),
         name = testName,
         address = testAddress,
         bankAccountNumber = bankAccountNumber
