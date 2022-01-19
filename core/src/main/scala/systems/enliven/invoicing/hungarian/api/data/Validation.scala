@@ -8,7 +8,11 @@ object Validation {
 
   final val hungarianTaxpayerIDRegex: Regex = """[0-9]{8}""".r
   final val hungarianTaxCodeRegex: Regex = """[1-5]""".r
-  final val hungarianCountyCodeRegex: Regex = """[0-9]{2}""".r
+
+  /**
+    * @note Accepted values: 02-20|22-44|51 (From NAV Docs [INCORRECT_COUNTY_CODE_CUSTOMER])
+    */
+  final val hungarianCountyCodeRegex: Regex = """0[2-9]|1[0-9]|20|2[2-9]|3[0-9]|4[0-4]|51""".r
 
   final val communityCountryCodeRegex: Regex = """[A-Z]{2}""".r
   final val communityTaxpayerIDRegex: Regex = """[0-9A-Z]{2,13}""".r
