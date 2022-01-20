@@ -148,7 +148,8 @@ class suiteRequests extends AnyFunSpec with invoicingSuite {
 
     it(
       "should be able to make a call to query-transaction-state with with " +
-        "valid and existent transaction ID without validation errors,") {
+        "valid and existent transaction ID without validation errors,"
+    ) {
       transactionIDs.init.foreach {
         transactionID =>
           eventually {

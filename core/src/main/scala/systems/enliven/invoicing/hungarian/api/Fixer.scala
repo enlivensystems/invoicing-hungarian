@@ -9,15 +9,14 @@ import scala.xml.{Elem, XML}
   */
 object Fixer {
 
-  private lazy val header: Elem = {
+  private lazy val header: Elem =
     <header>
       <requestId>mBUzbLnCBpAQTHghB5TV3tOXETRc8g</requestId>
       <timestamp>2020-07-22T09:40:10.972Z</timestamp>
       <requestVersion>2.0</requestVersion>
     </header>
-  }
 
-  private lazy val software: Elem = {
+  private lazy val software: Elem =
     <software>
       <softwareId>ABCDEFGHI123456789</softwareId>
       <softwareName>name</softwareName>
@@ -26,7 +25,6 @@ object Fixer {
       <softwareDevName>name</softwareDevName>
       <softwareDevContact>contact</softwareDevContact>
     </software>
-  }
 
   private lazy val addHeader: Elem => Elem = {
     case root if (root \ "header").isEmpty =>
