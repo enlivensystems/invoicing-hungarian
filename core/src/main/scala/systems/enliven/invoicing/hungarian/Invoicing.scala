@@ -159,6 +159,37 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
   ): Try[QueryInvoiceDataResponse] =
     Await.result(queryInvoiceData(invoiceNumber, entity)(askTimeout), timeout)
 
+  def digestWithInvoiceData(
+    entity: Entity,
+    direction: InvoiceDirectionType,
+    fromDate: Date,
+    toDate: Date,
+    timeout: FiniteDuration
+  )(implicit askTimeout: Timeout): Seq[Try[QueryInvoiceDataResponse]] =
+    Await.result(
+      digestWithInvoiceData(entity, direction, fromDate, toDate)(askTimeout),
+      timeout
+    )
+
+  def digestWithInvoiceData(
+    entity: Entity,
+    direction: InvoiceDirectionType,
+    fromDate: Date,
+    toDate: Date
+  )(implicit askTimeout: Timeout): Future[Seq[Try[QueryInvoiceDataResponse]]] = {
+    implicit val e: ExecutionContextExecutor = executionContext
+    digest(entity, direction, fromDate, toDate).flatMap {
+      response =>
+        Future.sequence(
+          response
+            .get
+            .flatMap(_.invoiceDigestResult.invoiceDigest)
+            .map(_.invoiceNumber)
+            .map(queryInvoiceData(_, entity))
+        )
+    }
+  }
+
   def digest(
     entity: Entity,
     direction: InvoiceDirectionType,

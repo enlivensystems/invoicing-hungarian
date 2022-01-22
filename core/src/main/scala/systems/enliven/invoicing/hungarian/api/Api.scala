@@ -1,9 +1,12 @@
 package systems.enliven.invoicing.hungarian.api
 
+import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.Accept
+import akka.stream.RestartSettings
+import akka.stream.scaladsl.{RestartSource, Sink, Source}
 import akka.util.ByteString
 import scalaxb.{Base64Binary, DataRecord, XMLFormat}
 import systems.enliven.invoicing.hungarian.api.Api.simpleDateFormat
@@ -48,6 +51,7 @@ import java.text.SimpleDateFormat
 import java.time.Instant
 import java.util.{Date, TimeZone}
 import javax.xml.datatype.DatatypeFactory
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -274,18 +278,32 @@ class Api()(
 
     val contentType = ContentType(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`)
 
-    Http().singleRequest(
-      HttpRequest(
-        uri = URI,
-        method = HttpMethods.POST,
-        headers = Accept(MediaTypes.`application/xml`) :: Nil,
-        entity = HttpEntity.Strict(contentType, ByteString(body, Charset.forName("UTF-8")))
-          .withContentType(contentType)
-      )
-    ).flatMap[(StatusCode, String)] {
-      case HttpResponse(status, _, entity, _) =>
-        entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String).map((status, _))
-    }
+    val settings = RestartSettings(
+      minBackoff = 3.seconds,
+      maxBackoff = 30.seconds,
+      randomFactor = 0.2
+    ).withMaxRestarts(20, 5.minutes)
+
+    RestartSource.withBackoff(settings) {
+      () =>
+        Source.futureSource[(StatusCode, String), NotUsed] {
+          Http().singleRequest(
+            HttpRequest(
+              uri = URI,
+              method = HttpMethods.POST,
+              headers = Accept(MediaTypes.`application/xml`) :: Nil,
+              entity = HttpEntity.Strict(contentType, ByteString(body, Charset.forName("UTF-8")))
+                .withContentType(contentType)
+            )
+          ).flatMap[Source[(StatusCode, String), NotUsed]] {
+            case HttpResponse(status, _, entity, _) =>
+              entity.dataBytes
+                .runFold(ByteString(""))(_ ++ _).map(_.utf8String)
+                .map((status, _))
+                .map(Source.single)
+          }
+        }
+    }.runWith(Sink.head)
   }
 
 }
