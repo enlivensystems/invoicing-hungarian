@@ -164,10 +164,11 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
     direction: InvoiceDirectionType,
     fromDate: Date,
     toDate: Date,
+    pages: Option[Int],
     timeout: FiniteDuration
   )(implicit askTimeout: Timeout): Seq[Try[QueryInvoiceDataResponse]] =
     Await.result(
-      digestWithInvoiceData(entity, direction, fromDate, toDate)(askTimeout),
+      digestWithInvoiceData(entity, direction, fromDate, toDate, pages)(askTimeout),
       timeout
     )
 
@@ -175,10 +176,11 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
     entity: Entity,
     direction: InvoiceDirectionType,
     fromDate: Date,
-    toDate: Date
+    toDate: Date,
+    pages: Option[Int]
   )(implicit askTimeout: Timeout): Future[Seq[Try[QueryInvoiceDataResponse]]] = {
     implicit val e: ExecutionContextExecutor = executionContext
-    digest(entity, direction, fromDate, toDate).flatMap {
+    digest(entity, direction, fromDate, toDate, pages).flatMap {
       response =>
         Future.sequence(
           response
@@ -195,15 +197,17 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
     direction: InvoiceDirectionType,
     fromDate: Date,
     toDate: Date,
+    pages: Option[Int],
     timeout: FiniteDuration
   )(implicit askTimeout: Timeout): Try[Seq[QueryInvoiceDigestResponse]] =
-    Await.result(digest(entity, direction, fromDate, toDate)(askTimeout), timeout)
+    Await.result(digest(entity, direction, fromDate, toDate, pages)(askTimeout), timeout)
 
   def digest(
     entity: Entity,
     direction: InvoiceDirectionType,
     fromDate: Date,
-    toDate: Date
+    toDate: Date,
+    pages: Option[Int]
   )(implicit askTimeout: Timeout): Future[Try[Seq[QueryInvoiceDigestResponse]]] =
     connection.get.ask[Try[Seq[QueryInvoiceDigestResponse]]](replyTo =>
       Connection.Protocol.QueryInvoiceDigest(
@@ -211,7 +215,8 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
         entity,
         direction,
         fromDate,
-        toDate
+        toDate,
+        pages
       )
     )
 

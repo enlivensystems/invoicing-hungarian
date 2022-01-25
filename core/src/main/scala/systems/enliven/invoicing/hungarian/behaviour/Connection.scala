@@ -64,7 +64,8 @@ object Connection {
       entity: Entity,
       direction: InvoiceDirectionType,
       fromDate: Date,
-      toDate: Date)
+      toDate: Date,
+      pages: Option[Int])
      extends Command
 
     final case class QueryTransactionStatus(
@@ -175,7 +176,7 @@ class Connection private (
         }
 
         Behaviors.same
-      case Protocol.QueryInvoiceDigest(replyTo, entity, direction, fromDate, toDate) =>
+      case Protocol.QueryInvoiceDigest(replyTo, entity, direction, fromDate, toDate, pages) =>
         log.trace(
           "Received [query-invoice-digest] request."
         )
@@ -193,7 +194,10 @@ class Connection private (
                   value.invoiceDigestResult.currentPage,
                   value.invoiceDigestResult.availablePage
                 )
-                if (value.invoiceDigestResult.currentPage < value.invoiceDigestResult.availablePage) {
+                if (value.invoiceDigestResult.currentPage < math.min(
+                    value.invoiceDigestResult.availablePage,
+                    pages.getOrElse(Int.MaxValue)
+                  )) {
                   val nextPage = value.invoiceDigestResult.currentPage + 1
                   log.trace("Running query for the next page [{}].", nextPage)
                   val query = doQuery(nextPage)(partialResults :+ value)

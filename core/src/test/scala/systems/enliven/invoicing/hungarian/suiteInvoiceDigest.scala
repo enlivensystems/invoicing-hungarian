@@ -14,10 +14,11 @@ class suiteInvoiceDigest extends AnyFunSpec with invoicingSuite {
       invoicing.digestWithInvoiceData(
         entity,
         OUTBOUND,
-        new DateTime().minusHours(5).toDate,
+        new DateTime().minusMinutes(5).toDate,
         new DateTime().toDate,
+        Some(4),
         600.seconds
-      )(600.seconds).take(100).map(_.get).foreach {
+      )(600.seconds).take(400).map(_.get).foreach {
         response =>
           response.invoiceDataResult.foreach {
             data => println(new String(Base64.getDecoder.decode(data.invoiceData.toString)))
@@ -30,6 +31,7 @@ class suiteInvoiceDigest extends AnyFunSpec with invoicingSuite {
         OUTBOUND,
         new DateTime().minusDays(1).toDate,
         new DateTime().toDate,
+        None,
         120.seconds
       )(120.seconds).get.foreach {
         response =>
