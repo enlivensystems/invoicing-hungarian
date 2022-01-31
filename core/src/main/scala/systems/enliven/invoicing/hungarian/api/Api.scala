@@ -327,21 +327,13 @@ object Api extends XMLProtocol with Logger {
 
   private def format(err: GeneralErrorResponse): String =
     err.result.funcCode.toString +
-      err.result.errorCode.map(
-        errCode => " [" + errCode + "]"
-      ).getOrElse("") +
-      err.result.message.map(
-        errMsg => " with message [" + errMsg + "]"
-      ).getOrElse("") +
+      err.result.errorCode.map(errCode => " [" + errCode + "]").getOrElse("") +
+      err.result.message.map(errMsg => " with message [" + errMsg + "]").getOrElse("") +
       err.technicalValidationMessages.map {
         validationError =>
           " with validation error [" + validationError.validationResultCode.toString + "]" +
-            validationError.validationErrorCode.map(
-              errCode => " [" + errCode + "]"
-            ).getOrElse("") +
-            validationError.message.map(
-              errMsg => " with message [" + errMsg + "]"
-            ).getOrElse("")
+            validationError.validationErrorCode.map(errCode => " [" + errCode + "]").getOrElse("") +
+            validationError.message.map(errMsg => " with message [" + errMsg + "]").getOrElse("")
       }.mkString
 
   object Protocol {
@@ -425,8 +417,8 @@ object Api extends XMLProtocol with Logger {
                       namespace = None,
                       key = Some("invoice"),
                       value = InvoiceType(
-                        invoice.reference.map(
-                          r => InvoiceReferenceType(r.number, r.reported, r.index)
+                        invoice.reference.map(r =>
+                          InvoiceReferenceType(r.number, r.reported, r.index)
                         ),
                         invoiceHead = InvoiceHeadType(
                           supplierInfo = SupplierInfoType(
@@ -546,24 +538,26 @@ object Api extends XMLProtocol with Logger {
                           )
                         },
                         productFeeSummary = Seq.empty,
-                        invoiceSummary = SummaryType(
-                          Seq(DataRecord[SummaryNormalType](
-                            namespace = None,
-                            key = Some("summaryNormal"), {
-                              val taxRateSummary = invoice.items.groupBy(_.vat).map {
-                                case (vat, items) =>
-                                  TaxRateSummary(
-                                    vat = vat,
-                                    netInCurrency = items.map(_.netPrice).sum,
-                                    netInHUF = items.map(_.netPriceHUF(invoice.exchangeRate)).sum,
-                                    vatInCurrency = items.map(_.vatPrice).sum,
-                                    vatInHUF = items.map(_.vatPriceHUF(invoice.exchangeRate)).sum,
-                                    grossInCurrency = items.map(_.grossPrice).sum,
-                                    grossInHUF =
-                                      items.map(_.grossPriceHUF(invoice.exchangeRate)).sum
-                                  )
-                              }
-                              SummaryNormalType(
+                        invoiceSummary = {
+                          val taxRateSummary = invoice.items.groupBy(_.vat).map {
+                            case (vat, items) =>
+                              TaxRateSummary(
+                                vat = vat,
+                                netInCurrency = items.map(_.netPrice).sum,
+                                netInHUF = items.map(_.netPriceHUF(invoice.exchangeRate)).sum,
+                                vatInCurrency = items.map(_.vatPrice).sum,
+                                vatInHUF = items.map(_.vatPriceHUF(invoice.exchangeRate)).sum,
+                                grossInCurrency = items.map(_.grossPrice).sum,
+                                grossInHUF =
+                                  items.map(_.grossPriceHUF(invoice.exchangeRate)).sum
+                              )
+                          }
+
+                          SummaryType(
+                            summarytypeoption = Seq(DataRecord[SummaryNormalType](
+                              namespace = None,
+                              key = Some("summaryNormal"),
+                              value = SummaryNormalType(
                                 summaryByVatRate =
                                   taxRateSummary.map {
                                     taxRateSummary =>
@@ -588,10 +582,15 @@ object Api extends XMLProtocol with Logger {
                                 invoiceVatAmount = taxRateSummary.map(_.vatInCurrency).sum,
                                 invoiceVatAmountHUF = taxRateSummary.map(_.vatInHUF).sum
                               )
-                            }
-                          )),
-                          None
-                        )
+                            )),
+                            summaryGrossData = Some(
+                              SummaryGrossDataType(
+                                invoiceGrossAmount = taxRateSummary.map(_.grossInCurrency).sum,
+                                invoiceGrossAmountHUF = taxRateSummary.map(_.grossInHUF).sum
+                              )
+                            )
+                          )
+                        }
                       )
                     )
                   )
