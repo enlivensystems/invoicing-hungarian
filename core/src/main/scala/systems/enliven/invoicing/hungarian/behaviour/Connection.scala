@@ -145,8 +145,8 @@ class Connection private (
       case Protocol.ValidateEntity(replyTo, entity) =>
         log.trace("Received [validate-entity] request.")
 
-        refreshToken(entity).map(
-          response => new Token(response, entity.credentials.exchangeKey)
+        refreshToken(entity).map(response =>
+          new Token(response, entity.credentials.exchangeKey)
         ).onComplete {
           case Success(_) =>
             log.trace("Successfully validated entity!")

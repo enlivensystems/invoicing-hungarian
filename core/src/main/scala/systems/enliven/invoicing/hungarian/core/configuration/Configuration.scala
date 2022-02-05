@@ -112,12 +112,8 @@ abstract class Configuration[
           val lowercaseKey = pair.getKey.toLowerCase
           val maybeRedactedValue = logRedactedKeywords.find {
             keyword => lowercaseKey.contains(keyword)
-          }.map(
-            _ => "#redacted#"
-          ).getOrElse(pair.getValue.render(ConfigRenderOptions.concise()))
-          s"  ${pair.getKey}${(0 to maxLength - pair.getKey.length).map(
-            _ => " "
-          ).mkString("")} " +
+          }.map(_ => "#redacted#").getOrElse(pair.getValue.render(ConfigRenderOptions.concise()))
+          s"  ${pair.getKey}${(0 to maxLength - pair.getKey.length).map(_ => " ").mkString("")} " +
             s"[$maybeRedactedValue]"
       }.mkString("Parameters are\n", ",\n", ".")
     }
@@ -175,7 +171,7 @@ abstract class Configuration[
 
   def getExternal(s: String): Iterable[(String, String)] = {
     val prefix = restrictTo.map(_ + ".").getOrElse("")
-    try {
+    try
       this.underlyingConfiguration
         .withOnlyPath(s"${prefix}external.$s")
         .getConfig(s"${prefix}external")
@@ -184,16 +180,16 @@ abstract class Configuration[
         .map {
           e => (e.getKey, e.getValue.unwrapped().toString)
         }
-    } catch {
+    catch {
       case _: com.typesafe.config.ConfigException.Missing =>
         Iterable.empty[(String, String)]
     }
   }
 
   def getFromDomainOption[T : TypeTag](key: String): Option[T] =
-    try {
+    try
       Some(getFromDomain[T](key))
-    } catch {
+    catch {
       case _: Missing => None
     }
 
@@ -207,9 +203,7 @@ abstract class Configuration[
     * Gets all the key-values from this configuration as a string-string map.
     */
   def getAll: Map[String, String] =
-    configuration.entrySet().asScala.toList.map(
-      entry => (entry.getKey, entry.getValue)
-    ).toMap.map {
+    configuration.entrySet().asScala.toList.map(entry => (entry.getKey, entry.getValue)).toMap.map {
       case (k, v) => k -> v.unwrapped().toString
     }
 
@@ -219,20 +213,20 @@ abstract class Configuration[
     * @throws Throwable If anything goes wrong, probably if `key` is not an object list.
     */
   def objectList(key: String): List[collection.Map[String, String]] =
-    try {
+    try
       configuration.getObjectList(key).iterator().asScala.map {
         _.unwrapped().asScala.mapValues(_.toString).toMap
       }.toList
-    } catch {
+    catch {
       case t: Throwable =>
         log.error(s"Path [$key] does not seem to be an object list. Error [${t.getClass.getName}]!")
         throw t
     }
 
   def getOption[T : TypeTag](key: String, logger: T => Unit = (_: T) => ()): Option[T] =
-    try {
+    try
       Some(get[T](key, logger))
-    } catch {
+    catch {
       case _: Missing =>
         log.info(s"The key [$key] is missing from the configuration.")
         None

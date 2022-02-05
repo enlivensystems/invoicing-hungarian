@@ -53,8 +53,8 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
   private def connect(): Future[Guardian.Protocol.ConnectionPool] =
     retry.Backoff(10, 1.seconds).apply {
       implicit val askTimeout: Timeout = 30.seconds
-      typedSystem.ask[Guardian.Protocol.ConnectionPool](
-        replyTo => Guardian.Protocol.GetConnectionPool(replyTo)
+      typedSystem.ask[Guardian.Protocol.ConnectionPool](replyTo =>
+        Guardian.Protocol.GetConnectionPool(replyTo)
       )
     }(retry.Success.always, executionContext)
 
@@ -77,8 +77,8 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
     implicit askTimeout: Timeout
   ): Try[ManageInvoiceResponse] =
     Await.result(
-      connection.get.ask[Try[ManageInvoiceResponse]](
-        replyTo => Connection.Protocol.ManageInvoice(replyTo, invoices, entity)
+      connection.get.ask[Try[ManageInvoiceResponse]](replyTo =>
+        Connection.Protocol.ManageInvoice(replyTo, invoices, entity)
       ),
       timeout
     )
@@ -89,22 +89,21 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
     baseDelay: FiniteDuration = 100.milliseconds
   ): Future[Try[ManageInvoiceResponse]] =
     retry.Backoff(maxRetry, baseDelay).apply {
-      connection.get.ask[Try[ManageInvoiceResponse]](
-        replyTo => Connection.Protocol.ManageInvoice(replyTo, invoices, entity)
+      connection.get.ask[Try[ManageInvoiceResponse]](replyTo =>
+        Connection.Protocol.ManageInvoice(replyTo, invoices, entity)
       )
     }(retry.Success.always, typedSystem.executionContext)
 
   def status(transactionID: String, entity: Entity, returnOriginalRequest: Boolean)(
     implicit askTimeout: Timeout
   ): Future[Try[QueryTransactionStatusResponse]] =
-    connection.get.ask[Try[QueryTransactionStatusResponse]](
-      replyTo =>
-        Connection.Protocol.QueryTransactionStatus(
-          replyTo,
-          transactionID,
-          entity,
-          returnOriginalRequest
-        )
+    connection.get.ask[Try[QueryTransactionStatusResponse]](replyTo =>
+      Connection.Protocol.QueryTransactionStatus(
+        replyTo,
+        transactionID,
+        entity,
+        returnOriginalRequest
+      )
     )
 
   def status(transactionID: String, entity: Entity)(
@@ -131,9 +130,7 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
     status(transactionID, entity, returnOriginalRequest = false, timeout)(askTimeout)
 
   def validate(entity: Entity)(implicit askTimeout: Timeout): Future[Try[Unit]] =
-    connection.get.ask[Try[Unit]](
-      replyTo => Connection.Protocol.ValidateEntity(replyTo, entity)
-    )
+    connection.get.ask[Try[Unit]](replyTo => Connection.Protocol.ValidateEntity(replyTo, entity))
 
   def validate(entity: Entity, timeout: FiniteDuration)(
     implicit askTimeout: Timeout
@@ -142,8 +139,8 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
   def queryTaxpayer(taxNumber: String, entity: Entity)(
     implicit askTimeout: Timeout
   ): Future[Try[Taxpayer]] =
-    connection.get.ask[Try[Taxpayer]](
-      replyTo => Connection.Protocol.QueryTaxpayer(replyTo, taxNumber, entity)
+    connection.get.ask[Try[Taxpayer]](replyTo =>
+      Connection.Protocol.QueryTaxpayer(replyTo, taxNumber, entity)
     )
 
   def queryTaxpayer(taxNumber: String, entity: Entity, timeout: FiniteDuration)(
@@ -153,8 +150,8 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
   def queryInvoiceData(invoiceNumber: String, entity: Entity)(
     implicit askTimeout: Timeout
   ): Future[Try[QueryInvoiceDataResponse]] =
-    connection.get.ask[Try[QueryInvoiceDataResponse]](
-      replyTo => Connection.Protocol.QueryInvoiceData(replyTo, invoiceNumber, entity)
+    connection.get.ask[Try[QueryInvoiceDataResponse]](replyTo =>
+      Connection.Protocol.QueryInvoiceData(replyTo, invoiceNumber, entity)
     )
 
   def queryInvoiceData(invoiceNumber: String, entity: Entity, timeout: FiniteDuration)(
@@ -177,15 +174,14 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
     fromDate: Date,
     toDate: Date
   )(implicit askTimeout: Timeout): Future[Try[Seq[QueryInvoiceDigestResponse]]] =
-    connection.get.ask[Try[Seq[QueryInvoiceDigestResponse]]](
-      replyTo =>
-        Connection.Protocol.QueryInvoiceDigest(
-          replyTo,
-          entity,
-          direction,
-          fromDate,
-          toDate
-        )
+    connection.get.ask[Try[Seq[QueryInvoiceDigestResponse]]](replyTo =>
+      Connection.Protocol.QueryInvoiceDigest(
+        replyTo,
+        entity,
+        direction,
+        fromDate,
+        toDate
+      )
     )
 
 }

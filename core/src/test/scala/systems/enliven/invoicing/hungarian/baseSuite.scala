@@ -17,9 +17,9 @@ trait baseSuite
     }
 
   protected def logException[U](f: => U): U =
-    try {
+    try
       f
-    } catch {
+    catch {
       case t: Throwable =>
         log.error(s"Eventually not satisfied due to [${t.getMessage}] of [${t.getClass.getName}]!")
         throw t
