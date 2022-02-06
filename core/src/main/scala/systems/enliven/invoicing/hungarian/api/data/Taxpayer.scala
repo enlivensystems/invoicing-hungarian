@@ -34,8 +34,8 @@ object Taxpayer {
       addresses = response.taxpayerData.get.taxpayerAddressList
         .map(_.taxpayerAddressItem)
         .getOrElse(Nil)
-        .map(
-          address => (address.taxpayerAddressType.toString, Address.create(address.taxpayerAddress))
+        .map(address =>
+          (address.taxpayerAddressType.toString, Address.create(address.taxpayerAddress))
         )
     )
 

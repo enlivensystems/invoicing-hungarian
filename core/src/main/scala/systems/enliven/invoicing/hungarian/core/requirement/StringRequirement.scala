@@ -42,9 +42,7 @@ case class StringRequirement(fieldName: String, valueOption: Option[String]) ext
   def matchesAnyOf(regexes: String*): StringRequirement =
     checkIfExist {
       value =>
-        requirement(regexes.exists(
-          regex => value.matches(regex)
-        ))(
+        requirement(regexes.exists(regex => value.matches(regex)))(
           Requirement.Exception.RegexViolation(
             s"Field [$fieldName] violated regex requirement ${regexes.mkString("[", "], [", "]")} ($value)."
           )

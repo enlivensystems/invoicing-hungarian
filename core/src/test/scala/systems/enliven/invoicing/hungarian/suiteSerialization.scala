@@ -89,9 +89,7 @@ class suiteSerialization extends AnyFunSpec with baseSuite {
             log.info("Found XML on path [{}], creating input stream.", path.toString)
             path
         }
-        .map(
-          path => path.getName -> new FileInputStream(path)
-        )
+        .map(path => path.getName -> new FileInputStream(path))
         .toList
     }
   }

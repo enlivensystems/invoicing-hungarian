@@ -63,62 +63,52 @@ object TestDataGenerator {
     )
 
   def privatePersonTestCases: Seq[PrivatePerson] =
-    testBankAccountNumbers.map(
-      bankAccountNumber => PrivatePerson(bankAccountNumber = bankAccountNumber)
+    testBankAccountNumbers.map(bankAccountNumber =>
+      PrivatePerson(bankAccountNumber = bankAccountNumber)
     )
 
   def domesticTaxablePersonTestCases: Seq[DomesticTaxablePerson] =
     for (bankAccountNumber <- testBankAccountNumbers;
-      taxNumber <- testTaxNumbers()) yield {
-      DomesticTaxablePerson(
-        taxNumber = taxNumber,
-        name = testName,
-        address = testAddress,
-        bankAccountNumber = bankAccountNumber
-      )
-    }
+      taxNumber <- testTaxNumbers()) yield DomesticTaxablePerson(
+      taxNumber = taxNumber,
+      name = testName,
+      address = testAddress,
+      bankAccountNumber = bankAccountNumber
+    )
 
   def domesticGroupVATSubjectTestCases: Seq[DomesticGroupVATSubject] =
     for (bankAccountNumber <- testBankAccountNumbers;
       groupTaxNumber <- testTaxNumbers(Seq(5));
-      memberTaxNumber <- testTaxNumbers(Seq(4))) yield {
-      DomesticGroupVATSubject(
-        groupTaxNumber = groupTaxNumber,
-        memberTaxNumber = memberTaxNumber,
-        name = testName,
-        address = testAddress,
-        bankAccountNumber = bankAccountNumber
-      )
-    }
+      memberTaxNumber <- testTaxNumbers(Seq(4))) yield DomesticGroupVATSubject(
+      groupTaxNumber = groupTaxNumber,
+      memberTaxNumber = memberTaxNumber,
+      name = testName,
+      address = testAddress,
+      bankAccountNumber = bankAccountNumber
+    )
 
   def euTaxablePersonTestCases: Seq[EUTaxablePerson] =
-    for (bankAccountNumber <- testBankAccountNumbers) yield {
-      EUTaxablePerson(
-        communityTaxNumber = new Generex(Validation.communityTaxNumberParser.regex).random(),
-        name = testName,
-        address = testAddress,
-        bankAccountNumber = bankAccountNumber
-      )
-    }
+    for (bankAccountNumber <- testBankAccountNumbers) yield EUTaxablePerson(
+      communityTaxNumber = new Generex(Validation.communityTaxNumberParser.regex).random(),
+      name = testName,
+      address = testAddress,
+      bankAccountNumber = bankAccountNumber
+    )
 
   def nonEUTaxablePerson: Seq[NonEUTaxablePerson] =
-    for (bankAccountNumber <- testBankAccountNumbers) yield {
-      NonEUTaxablePerson(
-        thirdStateTaxNumber = RandomStringUtils.randomAlphanumeric(10, 20).toUpperCase,
-        name = testName,
-        address = testAddress,
-        bankAccountNumber = bankAccountNumber
-      )
-    }
+    for (bankAccountNumber <- testBankAccountNumbers) yield NonEUTaxablePerson(
+      thirdStateTaxNumber = RandomStringUtils.randomAlphanumeric(10, 20).toUpperCase,
+      name = testName,
+      address = testAddress,
+      bankAccountNumber = bankAccountNumber
+    )
 
   def nonTaxableNonPrivatePerson: Seq[NonTaxableNonPrivatePerson] =
-    for (bankAccountNumber <- testBankAccountNumbers) yield {
-      NonTaxableNonPrivatePerson(
-        name = testName,
-        address = testAddress,
-        bankAccountNumber = bankAccountNumber
-      )
-    }
+    for (bankAccountNumber <- testBankAccountNumbers) yield NonTaxableNonPrivatePerson(
+      name = testName,
+      address = testAddress,
+      bankAccountNumber = bankAccountNumber
+    )
 
   def testRecipients: Seq[Recipient] =
     privatePersonTestCases.map(_.asInstanceOf[Recipient]) ++

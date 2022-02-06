@@ -26,12 +26,8 @@ object Hash {
 
     def hashed(payload: InvoiceOperationListType): String =
       payload.invoiceOperation
-        .map(
-          invoice => invoice.invoiceOperation.toString + invoice.invoiceData
-        )
-        .map(
-          base => hashSHA3512(base)
-        )
+        .map(invoice => invoice.invoiceOperation.toString + invoice.invoiceData)
+        .map(base => hashSHA3512(base))
         .mkString
 
   }

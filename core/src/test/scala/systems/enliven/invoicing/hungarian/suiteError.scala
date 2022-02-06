@@ -13,9 +13,7 @@ class suiteError extends AnyFunSpec with invoicingSuite {
   val invoice: Invoices.Invoice =
     Invoices.Raw(Invoices.Operation.storno, DatatypeConverter.parseBase64Binary("something"))
 
-  val validInvoices = (1 to 100).map(
-    _ => invoice
-  )
+  val validInvoices = (1 to 100).map(_ => invoice)
 
   describe("The request API") {
 

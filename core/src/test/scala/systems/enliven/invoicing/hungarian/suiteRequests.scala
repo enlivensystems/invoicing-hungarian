@@ -185,9 +185,7 @@ class suiteRequests extends AnyFunSpec with invoicingSuite {
       val completed: AtomicInteger = new AtomicInteger(0)
       (1 to testCount)
         .par
-        .map(
-          _ => invoicing.invoices(invoices, entity)(40.seconds)
-        )
+        .map(_ => invoicing.invoices(invoices, entity)(40.seconds))
         .foreach(_.onComplete {
           case Success(_) =>
             completed.incrementAndGet()
