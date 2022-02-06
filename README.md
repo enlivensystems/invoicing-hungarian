@@ -204,6 +204,7 @@ Please contact us at [hello@enliven.systems](mailto:hello@enliven.systems) or se
 ## Looking for the NAV API in other languages?
 
 - PHP [pzs/nav-online-invoice](https://github.com/pzs/nav-online-invoice)
+- NodeJS [angro-kft/nav-connector](https://github.com/angro-kft/nav-connector)
 - Java - interested in Java API? The Scala API can be directly used or ported in Java code. In
 case you need help, contact us or raise an issue here.
 
