@@ -19,8 +19,8 @@ Add as a dependency:
 (For current and released version see `version.sbt`. `version.sbt` contains the next patch release.
 For example, if you see version `1.0.54` there, the current release is `1.0.53`.)
 
-Please note that currently we only provide Scala 2.12 builds. Drop us a message in case you need
-a build for Scala 2.11 or Scala 2.13. Java port is possible. See more info below.
+Please note that currently we only provide Scala 2.13 builds. Drop us a message in case you need
+a build for Scala 2.11 or Scala 2.12. Java port is possible. See more info below.
 
 ## Prerequisites
 
@@ -42,7 +42,7 @@ Each build is released with 52+ tests succeeds on our CI. Running tests with a p
 you should see:
 
 ```
-[info] Tests: succeeded 52, failed 0, canceled 0, ignored 0, pending 0
+[info] Tests: succeeded 61, failed 0, canceled 0, ignored 0, pending 0
 ```
 
 ## Usage & features
