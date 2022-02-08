@@ -5,8 +5,8 @@ object Dependencies {
   val coreDependencies = Seq(
     "org.scalatest" %% "scalatest" % "3.3.0-SNAP3" % "test",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4",
-    "org.slf4j" % "slf4j-api" % "1.7.35",
-    "org.slf4j" % "slf4j-log4j12" % "1.7.35",
+    "org.slf4j" % "slf4j-api" % "1.7.36",
+    "org.slf4j" % "slf4j-log4j12" % "1.7.36",
     "com.typesafe.akka" %% "akka-actor" % "2.6.18",
     "com.typesafe.akka" %% "akka-stream" % "2.6.18",
     "com.typesafe.akka" %% "akka-http" % "10.2.7",
