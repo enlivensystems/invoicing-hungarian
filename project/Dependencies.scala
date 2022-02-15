@@ -16,7 +16,7 @@ object Dependencies {
     "org.scala-lang.modules" %% "scala-xml" % "1.3.0",
     "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2",
     "javax.xml.bind" % "jaxb-api" % "2.3.1",
-    "com.softwaremill.retry" %% "retry" % "0.3.3",
+    "com.softwaremill.retry" %% "retry" % "0.3.4",
     "org.bouncycastle" % "bcprov-jdk15on" % "1.70",
     "com.github.javafaker" % "javafaker" % "1.0.2" % "test",
     "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4",
