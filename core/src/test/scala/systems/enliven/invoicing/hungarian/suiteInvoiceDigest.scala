@@ -2,9 +2,9 @@ package systems.enliven.invoicing.hungarian
 
 import org.joda.time.DateTime
 import org.scalatest.funspec.AnyFunSpec
+import systems.enliven.invoicing.hungarian.Invoicing.Converters.invoiceDataResultTypeParser
 import systems.enliven.invoicing.hungarian.generated.OUTBOUND
 
-import java.util.Base64
 import scala.concurrent.duration.DurationInt
 
 class suiteInvoiceDigest extends AnyFunSpec with invoicingSuite {
@@ -21,7 +21,7 @@ class suiteInvoiceDigest extends AnyFunSpec with invoicingSuite {
       )(600.seconds).take(400).map(_.get).foreach {
         response =>
           response.invoiceDataResult.foreach {
-            data => println(new String(Base64.getDecoder.decode(data.invoiceData.toString)))
+            data => println(data.toInvoiceData)
           }
       }
     }

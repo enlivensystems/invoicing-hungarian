@@ -313,7 +313,7 @@ object Api extends XMLProtocol with Logger {
   protected[api] val simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd")
   simpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"))
 
-  private def parse[T](data: String)(implicit format: XMLFormat[T]): T =
+  protected[hungarian] def parse[T](data: String)(implicit format: XMLFormat[T]): T =
     scalaxb.fromXML[T](scala.xml.XML.loadString(data))
 
   private def writeData[T : ClassTag](

@@ -4,12 +4,15 @@ import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
+import systems.enliven.invoicing.hungarian.api.Api
 import systems.enliven.invoicing.hungarian.api.Api.Protocol.Request.Invoices
 import systems.enliven.invoicing.hungarian.api.data.{Entity, Taxpayer}
 import systems.enliven.invoicing.hungarian.behaviour.{Connection, Guardian}
 import systems.enliven.invoicing.hungarian.core.ConfigLoader.Loader
 import systems.enliven.invoicing.hungarian.core.{Configuration, Logger}
 import systems.enliven.invoicing.hungarian.generated.{
+  InvoiceDataResultType,
+  InvoiceDataType,
   InvoiceDirectionType,
   ManageInvoiceResponse,
   QueryInvoiceDataResponse,
@@ -17,7 +20,7 @@ import systems.enliven.invoicing.hungarian.generated.{
   QueryTransactionStatusResponse
 }
 
-import java.util.Date
+import java.util.{Base64, Date}
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success, Try}
@@ -219,5 +222,22 @@ class Invoicing()(implicit configuration: Configuration) extends Logger {
         pages
       )
     )
+
+}
+
+object Invoicing {
+
+  object Converters {
+
+    implicit class invoiceDataResultTypeParser(data: InvoiceDataResultType) {
+
+      def toInvoiceData: InvoiceDataType =
+        Api.parse[InvoiceDataType](
+          new String(Base64.getDecoder.decode(data.invoiceData.toString))
+        )
+
+    }
+
+  }
 
 }
