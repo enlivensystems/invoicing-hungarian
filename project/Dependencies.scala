@@ -20,7 +20,7 @@ object Dependencies {
     "org.bouncycastle" % "bcprov-jdk15on" % "1.70",
     "com.github.javafaker" % "javafaker" % "1.0.2" % "test",
     "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4",
-    "joda-time" % "joda-time" % "2.10.13",
+    "joda-time" % "joda-time" % "2.10.14",
     ("com.github.mifmif" % "generex" % "1.0.2")
       .exclude("junit", "junit")
   )
