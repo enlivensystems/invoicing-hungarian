@@ -14,7 +14,7 @@ import systems.enliven.invoicing.hungarian.api.recipient.{
 }
 
 object TestDataGenerator {
-  val faker = new com.github.javafaker.Faker()
+  val faker = new com.github.javafaker.Faker
 
   private def testName: String = faker.name().fullName()
 

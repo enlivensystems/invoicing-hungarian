@@ -56,7 +56,7 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.reflect.ClassTag
 import scala.util.Try
 
-class Api()(
+class Api(
   implicit configuration: Configuration,
   actorSystem: ActorSystem,
   ec: ExecutionContextExecutor)
@@ -75,7 +75,7 @@ class Api()(
     )
 
   private val apiData: Data = Data()
-  private[hungarian] val builder: RequestBuilder = new RequestBuilder()
+  private[hungarian] val builder: RequestBuilder = new RequestBuilder
 
   def queryInvoiceData(
     invoiceNumber: String,

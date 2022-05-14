@@ -25,7 +25,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success, Try}
 
-class Invoicing()(implicit configuration: Configuration) extends Logger {
+class Invoicing(implicit configuration: Configuration) extends Logger {
 
   implicit val typedSystem: ActorSystem[Guardian.Protocol.Command] =
     ActorSystem.create[Guardian.Protocol.Command](

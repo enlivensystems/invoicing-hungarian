@@ -19,9 +19,9 @@ class suiteRequests extends AnyFunSpec with invoicingSuite {
     Invoices.Smart(
       number = RandomStringUtils.randomAlphanumeric(32),
       reference = None,
-      issued = new Date(),
-      delivered = new Date(),
-      paid = new Date(),
+      issued = new Date,
+      delivered = new Date,
+      paid = new Date,
       currencyCode = "HUF",
       exchangeRate = 1,
       periodical = false,

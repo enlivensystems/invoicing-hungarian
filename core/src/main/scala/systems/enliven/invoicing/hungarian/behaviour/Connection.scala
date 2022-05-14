@@ -107,7 +107,7 @@ class Connection private (
     context.system.classicSystem.scheduler
 
   private val api =
-    new Api()(configuration, context.system.classicSystem, context.executionContext)
+    new Api(configuration, context.system.classicSystem, context.executionContext)
 
   private def initState: Behavior[Protocol.Message] =
     Behaviors.receiveMessage {

@@ -18,7 +18,7 @@ object Hash {
     ).mkString.toUpperCase
 
   def hashSHA3512(string: String): String =
-    new SHA3.Digest512().digest(string.getBytes(StandardCharsets.UTF_8)).map(
+    new SHA3.Digest512.digest(string.getBytes(StandardCharsets.UTF_8)).map(
       "%02x".format(_)
     ).mkString.toUpperCase
 
