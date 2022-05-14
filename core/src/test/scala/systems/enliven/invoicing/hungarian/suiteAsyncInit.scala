@@ -4,7 +4,7 @@ import org.scalatest.funspec.AnyFunSpec
 
 class suiteAsyncInit extends AnyFunSpec with baseSuite {
 
-  private val invoicing: Invoicing = new Invoicing()
+  private val invoicing: Invoicing = new Invoicing
 
   override protected def afterAll(): Unit = {
     invoicing.awaitShutdown()

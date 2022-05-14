@@ -4,7 +4,7 @@ import systems.enliven.invoicing.hungarian.api.data.Entity
 import systems.enliven.invoicing.hungarian.core.Configuration
 
 trait invoicingSuite extends baseSuite {
-  protected val invoicing: Invoicing = new Invoicing()
+  protected val invoicing: Invoicing = new Invoicing
 
   protected val entity: Entity = createEntity()
 

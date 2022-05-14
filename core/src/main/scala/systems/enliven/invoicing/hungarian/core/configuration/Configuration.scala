@@ -329,7 +329,7 @@ abstract class Configuration[
   implicit private class ConfigUtils(config: Config) {
 
     def asProperties(): Properties = {
-      val props = new Properties()
+      val props = new Properties
 
       config.entrySet().asScala.map {
         entry => entry.getKey -> entry.getValue.unwrapped().toString

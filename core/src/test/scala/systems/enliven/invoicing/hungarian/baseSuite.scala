@@ -9,7 +9,7 @@ import systems.enliven.invoicing.hungarian.core.{Configuration, Logger}
 trait baseSuite
  extends TestSuite with Matchers with BeforeAndAfterAll with CancelAfterFailure with Logger {
 
-  implicit protected val configuration: Configuration = new Configuration()
+  implicit protected val configuration: Configuration = new Configuration
 
   def eventually[U](f: => U)(implicit timeout: Span = Span(60, Seconds)): U =
     Eventually.eventually(Eventually.timeout(timeout), Eventually.interval(Span(2, Seconds))) {
