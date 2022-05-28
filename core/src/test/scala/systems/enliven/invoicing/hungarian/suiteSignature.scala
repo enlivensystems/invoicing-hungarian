@@ -19,7 +19,7 @@ class suiteSignature extends AnyFunSpec with invoicingSuite {
     createEntity(signingKeyOverride = Some("ce-8f5e-215119fa7dd621DLMRHRLH2S"))
 
   protected val api: Api =
-    new Api(configuration, invoicing.typedSystem.classicSystem, invoicing.executionContext)
+    new Api()(configuration, invoicing.typedSystem.classicSystem, invoicing.executionContext)
 
   describe("The requests API") {
     it("should be able to correctly generate a signature.") {

@@ -59,7 +59,7 @@ lazy val commonSettings = Seq(
         <name>Zoltán Zvara</name>
       </developer>
     </developers>,
-  Test / logLevel := Level.Debug,
+  Test / logLevel := Level.Info,
   /**
     * Do not pack sources in compile tasks.
     */
