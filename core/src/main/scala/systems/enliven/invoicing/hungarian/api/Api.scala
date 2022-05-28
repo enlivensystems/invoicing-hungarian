@@ -49,7 +49,7 @@ import systems.enliven.invoicing.hungarian.generated.{
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 import java.time.Instant
-import java.util.{Date, GregorianCalendar, TimeZone}
+import java.util.{Date, TimeZone}
 import javax.xml.datatype.DatatypeFactory
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContextExecutor, Future}
