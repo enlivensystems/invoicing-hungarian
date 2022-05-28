@@ -9,7 +9,7 @@ import akka.stream.RestartSettings
 import akka.stream.scaladsl.{RestartSource, Sink, Source}
 import akka.util.ByteString
 import scalaxb.{Base64Binary, DataRecord, XMLFormat}
-import systems.enliven.invoicing.hungarian.api.Api.simpleDateFormat
+import systems.enliven.invoicing.hungarian.api.Api.simpleDateTimeFormat
 import systems.enliven.invoicing.hungarian.api.data.{Entity, Issuer, Item, TaxRateSummary}
 import systems.enliven.invoicing.hungarian.api.recipient.Recipient
 import systems.enliven.invoicing.hungarian.core
@@ -49,7 +49,7 @@ import systems.enliven.invoicing.hungarian.generated.{
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 import java.time.Instant
-import java.util.{Date, TimeZone}
+import java.util.{Date, GregorianCalendar, TimeZone}
 import javax.xml.datatype.DatatypeFactory
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContextExecutor, Future}
@@ -155,15 +155,17 @@ class Api(
       direction,
       InvoiceQueryParamsType(
         MandatoryQueryParamsType(
-          DataRecord[DateIntervalParamType](
+          DataRecord[DateTimeIntervalParamType](
             namespace = None,
             key = Some("insDate"),
-            value = DateIntervalParamType(
-              DatatypeFactory.newInstance
-                .newXMLGregorianCalendar(simpleDateFormat.format(fromDate)),
-              DatatypeFactory.newInstance
-                .newXMLGregorianCalendar(simpleDateFormat.format(toDate))
-            )
+            value = {
+              DateTimeIntervalParamType(
+                DatatypeFactory.newInstance
+                  .newXMLGregorianCalendar(simpleDateTimeFormat.format(fromDate)),
+                DatatypeFactory.newInstance
+                  .newXMLGregorianCalendar(simpleDateTimeFormat.format(toDate))
+              )
+            }
           )
         )
       )
@@ -309,6 +311,9 @@ class Api(
 }
 
 object Api extends XMLProtocol with Logger {
+
+  protected[api] val simpleDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.S'Z'")
+  simpleDateTimeFormat.setTimeZone(TimeZone.getTimeZone("UTC"))
 
   protected[api] val simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd")
   simpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"))
