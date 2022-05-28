@@ -157,7 +157,7 @@ class Api(
         MandatoryQueryParamsType(
           DataRecord[DateIntervalParamType](
             namespace = None,
-            key = Some("invoiceIssueDate"),
+            key = Some("insDate"),
             value = DateIntervalParamType(
               DatatypeFactory.newInstance
                 .newXMLGregorianCalendar(simpleDateFormat.format(fromDate)),
