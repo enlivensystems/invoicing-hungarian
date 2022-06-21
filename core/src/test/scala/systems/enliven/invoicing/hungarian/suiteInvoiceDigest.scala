@@ -18,7 +18,7 @@ class suiteInvoiceDigest extends AnyFunSpec with invoicingSuite {
         new DateTime().toDate,
         Some(4),
         600.seconds
-      )(600.seconds).take(400).map(_.get).foreach {
+      )(600.seconds).take(400).map(_._2.get).foreach {
         response =>
           response.invoiceDataResult.foreach {
             data => println(data.toInvoiceData)

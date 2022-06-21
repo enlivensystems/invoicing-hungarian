@@ -13,6 +13,7 @@ import systems.enliven.invoicing.hungarian.core.{Configuration, Logger}
 import systems.enliven.invoicing.hungarian.generated.{
   InvoiceDataResultType,
   InvoiceDataType,
+  InvoiceDigestType,
   InvoiceDirectionType,
   ManageInvoiceResponse,
   QueryInvoiceDataResponse,
@@ -169,7 +170,7 @@ class Invoicing(implicit configuration: Configuration) extends Logger {
     toDate: Date,
     pages: Option[Int],
     timeout: FiniteDuration
-  )(implicit askTimeout: Timeout): Seq[Try[QueryInvoiceDataResponse]] =
+  )(implicit askTimeout: Timeout): Seq[(InvoiceDigestType, Try[QueryInvoiceDataResponse])] =
     Await.result(
       digestWithInvoiceData(entity, direction, fromDate, toDate, pages)(askTimeout),
       timeout
@@ -181,7 +182,9 @@ class Invoicing(implicit configuration: Configuration) extends Logger {
     fromDate: Date,
     toDate: Date,
     pages: Option[Int]
-  )(implicit askTimeout: Timeout): Future[Seq[Try[QueryInvoiceDataResponse]]] = {
+  )(
+    implicit askTimeout: Timeout
+  ): Future[Seq[(InvoiceDigestType, Try[QueryInvoiceDataResponse])]] = {
     implicit val e: ExecutionContextExecutor = executionContext
     digest(entity, direction, fromDate, toDate, pages).flatMap {
       response =>
@@ -189,8 +192,13 @@ class Invoicing(implicit configuration: Configuration) extends Logger {
           response
             .get
             .flatMap(_.invoiceDigestResult.invoiceDigest)
-            .map(_.invoiceNumber)
-            .map(queryInvoiceData(_, entity))
+            .map {
+              invoiceDigest =>
+                queryInvoiceData(invoiceDigest.invoiceNumber, entity)
+                  .map {
+                    response => invoiceDigest -> response
+                  }
+            }
         )
     }
   }
