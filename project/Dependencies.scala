@@ -3,26 +3,26 @@ import sbt._
 object Dependencies {
 
   val coreDependencies = Seq(
-    "org.scalatest" %% "scalatest" % "3.3.0-SNAP3" % "test",
-    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
-    "org.slf4j" % "slf4j-api" % "1.7.36",
-    "org.slf4j" % "slf4j-log4j12" % "1.7.36",
-    "com.typesafe.akka" %% "akka-actor" % "2.6.19",
-    "com.typesafe.akka" %% "akka-stream" % "2.6.19",
-    "com.typesafe.akka" %% "akka-http" % "10.2.9",
-    "com.typesafe.akka" %% "akka-slf4j" % "2.6.19",
-    "com.typesafe.akka" %% "akka-actor-typed" % "2.6.19",
-    "org.apache.commons" % "commons-lang3" % "3.12.0",
-    "org.scala-lang.modules" %% "scala-xml" % "1.3.0",
-    "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2",
-    "javax.xml.bind" % "jaxb-api" % "2.3.1",
-    "com.softwaremill.retry" %% "retry" % "0.3.5",
-    "org.bouncycastle" % "bcprov-jdk18on" % "1.71",
-    "com.github.javafaker" % "javafaker" % "1.0.2" % "test",
+    "org.scalatest" %% "scalatest" % "3.2.15" % "test",
+    "org.scala-lang.modules" %% "scala-xml" % "2.1.0",
+    "org.scala-lang.modules" %% "scala-parser-combinators" % "2.2.0",
     "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4",
-    "joda-time" % "joda-time" % "2.10.14",
-    ("com.github.mifmif" % "generex" % "1.0.2")
-      .exclude("junit", "junit")
+    "org.http4s" %% "http4s-ember-client" % "0.23.18",
+    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
+    "org.slf4j" % "slf4j-api" % "2.0.7",
+    "org.apache.logging.log4j" % "log4j-slf4j2-impl" % "2.20.0",
+    "com.typesafe.akka" %% "akka-actor" % "2.8.0",
+    "com.typesafe.akka" %% "akka-stream" % "2.8.0",
+    "com.typesafe.akka" %% "akka-slf4j" % "2.8.0",
+    "com.typesafe.akka" %% "akka-actor-typed" % "2.8.0",
+    "com.typesafe.akka" %% "akka-http" % "10.5.0",
+    "org.apache.commons" % "commons-lang3" % "3.12.0",
+    "javax.xml.bind" % "jaxb-api" % "2.3.0",
+    "com.softwaremill.retry" %% "retry" % "0.3.6",
+    "org.bouncycastle" % "bcprov-jdk18on" % "1.73",
+    "joda-time" % "joda-time" % "2.12.5",
+    "net.datafaker" % "datafaker" % "1.9.0",
+    "com.github.mifmif" % "generex" % "1.0.2"
   )
 
 }

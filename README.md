@@ -178,18 +178,27 @@ akka {
 
 ## Logging
 
-Provide your own logging by adding a `log4j.properties` to your classpath, for example:
+Provide your own logging by adding a `log4j2.properties` to your classpath, for example:
 
 ```
-# Root logger option.
-log4j.rootLogger=INFO, stdout
+status = error
 
-# Direct log messages to STDOUT.
-log4j.appender.stdout=org.apache.log4j.ConsoleAppender
-log4j.appender.stdout.Target=System.out
-log4j.appender.stdout.layout=org.apache.log4j.PatternLayout
-log4j.appender.stdout.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n
-log4j.appender.stdout.encoding=UTF-8
+appenders = console
+
+appender.console.type = Console
+appender.console.name = STDOUT
+appender.console.layout.type = PatternLayout
+appender.console.layout.pattern = %d{${LOG_DATEFORMAT_PATTERN:-MM-dd HH:mm:ss.SSS}} %highlight{${LOG_LEVEL_PATTERN:-%5p}}{FATAL=red blink, ERROR=red, WARN=yellow bold, INFO=green, DEBUG=green bold, TRACE=blue} %style{%12.12t}{magenta} %style{%20.20replace{%c{1.}:%L}{}{}}{cyan} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%rEx}
+appender.console.layout.disableAnsi = false
+
+loggers = hungarian
+
+logger.hungarian.name = systems.enliven.invoicing.hungarian
+logger.hungarian.level = trace
+
+rootLogger.level = error
+rootLogger.appenderRefs = stdout
+rootLogger.appenderRef.stdout.ref = STDOUT
 ```
 
 ## Questions?

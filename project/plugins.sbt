@@ -1,10 +1,10 @@
 logLevel := Level.Warn
 
-resolvers += Resolver.sonatypeRepo("public")
-
-addSbtPlugin("com.github.cb372" % "sbt-explicit-dependencies" % "0.2.16")
-addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.10.0-RC1")
-addSbtPlugin("org.scalaxb" % "sbt-scalaxb" % "1.8.3")
-addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.0.1")
+addDependencyTreePlugin
+addSbtPlugin("com.github.cb372" % "sbt-explicit-dependencies" % "0.3.1")
+addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.0.7")
 addSbtPlugin("com.github.sbt" % "sbt-release" % "1.1.0")
-addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.10.1")
+addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.10.4")
+
+resolvers ++= Resolver.sonatypeOssRepos("public")
+addSbtPlugin("org.scalaxb" % "sbt-scalaxb" % "1.11.0")

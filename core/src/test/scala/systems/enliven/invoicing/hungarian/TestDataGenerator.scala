@@ -1,6 +1,7 @@
 package systems.enliven.invoicing.hungarian
 
 import com.mifmif.common.regex.Generex
+import net.datafaker.Faker
 import org.apache.commons.lang3.RandomStringUtils
 import systems.enliven.invoicing.hungarian.api.data.{Address, TaxNumber, Validation}
 import systems.enliven.invoicing.hungarian.api.recipient.{
@@ -14,7 +15,7 @@ import systems.enliven.invoicing.hungarian.api.recipient.{
 }
 
 object TestDataGenerator {
-  val faker = new com.github.javafaker.Faker
+  val faker = new Faker
 
   private def testName: String = faker.name().fullName()
 

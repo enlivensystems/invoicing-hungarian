@@ -5,12 +5,10 @@ import com.typesafe.config._
 import systems.enliven.invoicing.hungarian.core
 import systems.enliven.invoicing.hungarian.core.{Factory, Logger}
 
-import java.io.{File, Serializable}
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path, Paths}
+import java.io.Serializable
 import java.util.Properties
-import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
+import scala.jdk.CollectionConverters.{ListHasAsScala, MapHasAsScala, SetHasAsScala}
 import scala.language.reflectiveCalls
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
@@ -65,7 +63,7 @@ abstract class Configuration[
   @transient private val _defaults =
     ConfigFactory.parseResourcesAnySyntax(referencePath, _parseOptions)
 
-  private var configuration = (if (fromEnvironment) {
+  private val configuration = (if (fromEnvironment) {
                                  ConfigFactory
                                    .systemProperties()
                                    .withFallback(mergeConfigurations())
@@ -119,110 +117,6 @@ abstract class Configuration[
     }
   }
 
-  /**
-    * Reloads the configuration from the working directory.
-    *
-    * A file with the same name will be searched for in the application's current working directory.
-    * It will validate the configuration with the pre-loaded reference.
-    *
-    * @note This is going to mutate the underlying configuration and return with the same reference!
-    */
-  def reloadFromWorking(): this.type = {
-    val path = System.getProperty("user.dir") + File.separator + fromFile
-    reloadFromFile(path)
-  }
-
-  /**
-    * Reloads the configuration from the given file.
-    *
-    * It will validate the configuration with the pre-loaded reference.
-    *
-    * @note This is going to mutate the underlying configuration and return with the same reference!
-    */
-  def reloadFromFile(path: String): this.type = {
-    log.info(s"Reloading configuration from path [$path].")
-    setUnderlyingConfiguration {
-      ConfigFactory.parseFileAnySyntax(new File(path), _parseOptions)
-    }
-  }
-
-  /**
-    * Sets the underlying (typesafe) configuration. It will also validate the configuration
-    * with the same reference that has been loaded when this configuration has been created.
-    *
-    * This is package protected to avoid users mess with the underlying model of this configuration,
-    * but this allows the inner factory to provide immutability and supply a new underlying
-    * configuration upon `set`.
-    */
-  protected def setUnderlyingConfiguration(underlying: Config): this.type = {
-    configuration = underlying
-    this
-  }
-
-  def deleteFromWorking(): Unit = {
-    val path = System.getProperty("user.dir") + File.separator + fromFile
-    if (new File(path).exists()) {
-      if (!new File(path).delete()) {
-        throw new Configuration.Exception.File("Could not delete configuration from " +
-          s"working directory [$path]!")
-      }
-    }
-  }
-
-  def getExternal(s: String): Iterable[(String, String)] = {
-    val prefix = restrictTo.map(_ + ".").getOrElse("")
-    try
-      this.underlyingConfiguration
-        .withOnlyPath(s"${prefix}external.$s")
-        .getConfig(s"${prefix}external")
-        .entrySet()
-        .asScala
-        .map {
-          e => (e.getKey, e.getValue.unwrapped().toString)
-        }
-    catch {
-      case _: com.typesafe.config.ConfigException.Missing =>
-        Iterable.empty[(String, String)]
-    }
-  }
-
-  def getFromDomainOption[T : TypeTag](key: String): Option[T] =
-    try
-      Some(getFromDomain[T](key))
-    catch {
-      case _: Missing => None
-    }
-
-  /**
-    * Gets a specific `key` from the domain of this configuration.
-    */
-  def getFromDomain[T : TypeTag](key: String): T =
-    get[T](restrictTo.map(_ + ".").getOrElse("") + key)
-
-  /**
-    * Gets all the key-values from this configuration as a string-string map.
-    */
-  def getAll: Map[String, String] =
-    configuration.entrySet().asScala.toList.map(entry => (entry.getKey, entry.getValue)).toMap.map {
-      case (k, v) => k -> v.unwrapped().toString
-    }
-
-  /**
-    * Gets the list of objects under this `key` as a map of string-string pairs.
-    *
-    * @throws Throwable If anything goes wrong, probably if `key` is not an object list.
-    */
-  def objectList(key: String): List[collection.Map[String, String]] =
-    try
-      configuration.getObjectList(key).iterator().asScala.map {
-        _.unwrapped().asScala.mapValues(_.toString).toMap
-      }.toList
-    catch {
-      case t: Throwable =>
-        log.error(s"Path [$key] does not seem to be an object list. Error [${t.getClass.getName}]!")
-        throw t
-    }
-
   def getOption[T : TypeTag](key: String, logger: T => Unit = (_: T) => ()): Option[T] =
     try
       Some(get[T](key, logger))
@@ -256,7 +150,7 @@ abstract class Configuration[
         case t if t =:= typeOf[Map[String, String]] =>
           configuration.getObject(key).unwrapped().asScala
         case t if t =:= typeOf[Map[String, List[String]]] =>
-          configuration.getObject(key).unwrapped().asScala.mapValues(
+          configuration.getObject(key).unwrapped().asScala.view.mapValues(
             _.asInstanceOf[java.util.ArrayList[String]].asScala.toList
           ).toMap
         case t if t =:= typeOf[Map[String, Boolean]] =>
@@ -272,48 +166,6 @@ abstract class Configuration[
       case t: Missing   => log.warn(s"Configuration [$key] is missing!"); throw t
       case t: WrongType => log.warn(s"Configuration [$key] is of wrong type!"); throw t
     }
-
-  /**
-    * Sets a key to the supplied value in this configuration.
-    *
-    * @throws core.Exception If the specified key is restricted by this configuration.
-    */
-  def set[T : TypeTag](key: String, value: T): Specialized = {
-    if (restrictTo.nonEmpty && !key.startsWith(restrictTo.get)) {
-      throw new core.Exception(
-        s"The specified key [$key] is restricted by [${restrictTo.get}] in this configuration!"
-      )
-    }
-    val newConfiguration = implicitly[Factory.forConfiguration[Specialized]]
-      .apply(fromFile, fromEnvironment, restrictTo, silent)
-
-    typeOf[T] match {
-      case t if t =:= typeOf[List[String]] =>
-        newConfiguration.setUnderlyingConfiguration(
-          configuration.withValue(
-            key,
-            ConfigValueFactory.fromIterable(value.asInstanceOf[List[String]].asJava)
-          )
-        )
-      case _ =>
-        newConfiguration.setUnderlyingConfiguration(
-          configuration.withValue(key, ConfigValueFactory.fromAnyRef(value))
-        )
-    }
-  }
-
-  def saveToWorking(): Path = {
-    val path = java.lang.System.getProperty("user.dir") + File.separator + fromFile
-    Files.write(
-      Paths.get(path),
-      underlyingConfiguration
-        .root()
-        .render(ConfigRenderOptions.defaults())
-        .getBytes(StandardCharsets.UTF_8)
-    )
-  }
-
-  def underlyingConfiguration: Config = configuration
 
   /**
     * Extends the default configuration with the resource configuration's values.
@@ -357,9 +209,7 @@ object Configuration {
   }
 
   object Exception {
-    class Restricted(message: String) extends core.Exception(message)
     class Type(message: String) extends core.Exception(message)
-    class File(message: String) extends core.Exception(message)
   }
 
 }

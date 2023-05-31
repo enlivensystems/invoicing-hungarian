@@ -1,13 +1,14 @@
-import Dependencies._
-import sbt.Keys.test
-import sbtrelease.ReleaseStateTransformations._
+import Dependencies.*
+import sbtrelease.ReleaseStateTransformations.*
 import sbtrelease.{versionFormatError, Version}
 import sbtrelease.ReleasePlugin.autoImport.{releaseProcess, releaseVersionBump}
+import sbt.Tests.{Group, SubProcess}
+import sbt.{Credentials, Test}
 
 lazy val commonSettings = Seq(
   organizationName := "Enliven Systems Kft.",
   organization := "systems.enliven.invoicing.hungarian",
-  scalaVersion := "2.13.8",
+  scalaVersion := "2.13.10",
   semanticdbEnabled := true,
   semanticdbVersion := scalafixSemanticdb.revision,
   addCompilerPlugin(scalafixSemanticdb),
@@ -45,9 +46,6 @@ lazy val commonSettings = Seq(
     pushChanges
   ),
   Global / concurrentRestrictions := Seq(Tags.limitAll(14)),
-  Test / parallelExecution := true,
-  fork := false,
-  IntegrationTest / test / fork := false,
   pomExtra :=
     <developers>
       <developer>
@@ -59,6 +57,22 @@ lazy val commonSettings = Seq(
         <name>Zoltán Zvara</name>
       </developer>
     </developers>,
+  Test / fork := true,
+  Test / testForkedParallel := true,
+  Test / parallelExecution := true,
+  Test / testGrouping := (Test / testGrouping).value.flatMap {
+    group =>
+      group.tests.map(test =>
+        Group(
+          test.name,
+          Seq(test),
+          SubProcess(ForkOptions().withRunJVMOptions(scala.Vector(
+            "-Dlog4j.configurationFile=scala-build-tool-resources/log4j2.properties"
+          )))
+        )
+      )
+  },
+  concurrentRestrictions := Seq(Tags.limit(Tags.ForkedTestGroup, 3)),
   Test / logLevel := Level.Info,
   /**
     * Do not pack sources in compile tasks.
@@ -81,17 +95,20 @@ lazy val commonSettings = Seq(
 )
 
 lazy val core =
-  (project in file("core")).settings(commonSettings: _*).enablePlugins(ScalaxbPlugin).settings(
-    name := "core",
-    description := "Core Hungarian Invoicing API to interface with NAV Online Invoice API 3.0.",
-    libraryDependencies ++= coreDependencies,
-    Compile / scalaxb / scalaxbDispatchVersion := "0.13.4",
-    Compile / scalaxb / scalaxbPackageName := "systems.enliven.invoicing.hungarian.generated"
-  )
+  (project in file("core"))
+    .settings(commonSettings: _*)
+    .enablePlugins(ScalaxbPlugin)
+    .settings(
+      name := "core",
+      description := "Core Hungarian Invoicing API to interface with NAV Online Invoice API 3.0.",
+      libraryDependencies ++= coreDependencies,
+      scalaxbGenerateDispatchClient := false,
+      scalaxbGenerateHttp4sClient := true,
+      scalaxbPackageName := "systems.enliven.invoicing.hungarian.generated"
+    )
 
-lazy val invoicing =
-  (project in file(".")).settings(commonSettings: _*).enablePlugins(ScalaxbPlugin).aggregate(
-    core
-  ).dependsOn(
-    core % "test->test;compile->compile"
-  )
+lazy val invoicing = (project in file("."))
+  .settings(commonSettings: _*)
+  .enablePlugins(ScalaxbPlugin)
+  .aggregate(core)
+  .dependsOn(core % "test->test;compile->compile")

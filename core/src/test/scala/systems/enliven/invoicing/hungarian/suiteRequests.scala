@@ -68,7 +68,7 @@ class suiteRequests extends AnyFunSpec with invoicingSuite {
       exception.getClass.getName,
       exception.getMessage
     )
-    fail
+    fail()
   }
 
   def testManageInvoice(invoices: Invoices): String =
@@ -123,7 +123,7 @@ class suiteRequests extends AnyFunSpec with invoicingSuite {
 
       response match {
         case Success(_) =>
-          fail
+          fail()
         case Failure(exception) =>
           log.info("Failed with invalid transaction ID and message [{}].", exception.getMessage)
       }

@@ -20,8 +20,8 @@ import systems.enliven.invoicing.hungarian.generated.{
   TokenExchangeRequest
 }
 
-import scala.collection.JavaConverters._
 import scala.io.Source
+import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.xml.Node
 
 class suiteSerialization extends AnyFunSpec with baseSuite {

@@ -2,7 +2,8 @@ package systems.enliven.invoicing.hungarian.core
 
 import com.typesafe.config.{Config, ConfigValue}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.SetHasAsScala
+
 
 object ConfigLoader {
 
