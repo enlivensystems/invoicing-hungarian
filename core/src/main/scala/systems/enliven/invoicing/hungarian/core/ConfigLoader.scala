@@ -4,7 +4,6 @@ import com.typesafe.config.{Config, ConfigValue}
 
 import scala.jdk.CollectionConverters.SetHasAsScala
 
-
 object ConfigLoader {
 
   implicit class Loader(baseConfig: Config) extends Logger {
