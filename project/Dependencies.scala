@@ -19,7 +19,7 @@ object Dependencies {
     "org.apache.commons" % "commons-lang3" % "3.12.0",
     "javax.xml.bind" % "jaxb-api" % "2.3.1",
     "com.softwaremill.retry" %% "retry" % "0.3.6",
-    "org.bouncycastle" % "bcprov-jdk18on" % "1.73",
+    "org.bouncycastle" % "bcprov-jdk18on" % "1.74",
     "joda-time" % "joda-time" % "2.12.5",
     "net.datafaker" % "datafaker" % "2.0.0",
     "com.github.mifmif" % "generex" % "1.0.2"
