@@ -10,7 +10,7 @@ object Dependencies {
     "org.http4s" %% "http4s-ember-client" % "0.23.23",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
     "org.slf4j" % "slf4j-api" % "2.0.9",
-    "org.apache.logging.log4j" % "log4j-slf4j2-impl" % "2.21.0",
+    "org.apache.logging.log4j" % "log4j-slf4j2-impl" % "2.21.1",
     "com.typesafe.akka" %% "akka-actor" % "2.8.0",
     "com.typesafe.akka" %% "akka-stream" % "2.8.0",
     "com.typesafe.akka" %% "akka-slf4j" % "2.8.0",
