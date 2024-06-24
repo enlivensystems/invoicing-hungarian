@@ -3,7 +3,7 @@ import sbt._
 object Dependencies {
 
   val coreDependencies = Seq(
-    "org.scalatest" %% "scalatest" % "3.2.18" % "test",
+    "org.scalatest" %% "scalatest" % "3.2.19" % "test",
     "org.scala-lang.modules" %% "scala-xml" % "2.1.0",
     "org.scala-lang.modules" %% "scala-parser-combinators" % "2.2.0",
     "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4",
