@@ -7,4 +7,4 @@ addSbtPlugin("com.github.sbt" % "sbt-release" % "1.4.0")
 addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.12.1")
 
 resolvers ++= Resolver.sonatypeOssRepos("public")
-addSbtPlugin("org.scalaxb" % "sbt-scalaxb" % "1.12.0")
+addSbtPlugin("org.scalaxb" % "sbt-scalaxb" % "1.12.1")
