@@ -20,7 +20,7 @@ object Dependencies {
     "javax.xml.bind" % "jaxb-api" % "2.3.1",
     "com.softwaremill.retry" %% "retry" % "0.3.6",
     "org.bouncycastle" % "bcprov-jdk18on" % "1.78.1",
-    "joda-time" % "joda-time" % "2.12.7",
+    "joda-time" % "joda-time" % "2.13.0",
     "net.datafaker" % "datafaker" % "2.3.1",
     "com.github.mifmif" % "generex" % "1.0.2"
   )
