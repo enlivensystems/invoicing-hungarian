@@ -1,7 +1,7 @@
 package systems.enliven.invoicing.hungarian.core
 
 class Configuration(silent: Boolean = false)(implicit
-factory: Factory.forConfiguration[Configuration])
+  factory: Factory.forConfiguration[Configuration])
  extends configuration.Configuration[Configuration](
    "invoicing-hungarian.conf",
    "invoicing-hungarian.defaults.conf",
