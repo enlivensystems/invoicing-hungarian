@@ -6,7 +6,7 @@ object Dependencies {
     "org.scalatest" %% "scalatest" % "3.2.19" % "test",
     "org.scala-lang.modules" %% "scala-xml" % "2.1.0",
     "org.scala-lang.modules" %% "scala-parser-combinators" % "2.2.0",
-    "org.scala-lang.modules" %% "scala-parallel-collections" % "1.1.0",
+    "org.scala-lang.modules" %% "scala-parallel-collections" % "1.2.0",
     "org.http4s" %% "http4s-ember-client" % "0.23.30",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
     "org.slf4j" % "slf4j-api" % "2.0.16",
