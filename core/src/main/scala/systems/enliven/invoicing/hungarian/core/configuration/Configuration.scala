@@ -135,13 +135,13 @@ abstract class Configuration[
   def get[T : TypeTag](key: String, logger: T => Unit = (_: T) => ()): T =
     try {
       val value = (typeOf[T] match {
-        case t if t =:= typeOf[String]     => configuration.getString(key)
-        case t if t =:= typeOf[Duration]   => Duration(configuration.getString(key))
-        case t if t =:= typeOf[Int]        => configuration.getInt(key)
-        case t if t =:= typeOf[Long]       => configuration.getLong(key)
-        case t if t =:= typeOf[Double]     => configuration.getDouble(key)
-        case t if t =:= typeOf[Boolean]    => configuration.getBoolean(key)
-        case t if t =:= typeOf[Properties] => configuration.getConfig(key).asProperties()
+        case t if t =:= typeOf[String]       => configuration.getString(key)
+        case t if t =:= typeOf[Duration]     => Duration(configuration.getString(key))
+        case t if t =:= typeOf[Int]          => configuration.getInt(key)
+        case t if t =:= typeOf[Long]         => configuration.getLong(key)
+        case t if t =:= typeOf[Double]       => configuration.getDouble(key)
+        case t if t =:= typeOf[Boolean]      => configuration.getBoolean(key)
+        case t if t =:= typeOf[Properties]   => configuration.getConfig(key).asProperties()
         case t if t =:= typeOf[List[String]] =>
           configuration.getList(key).unwrapped().asScala.toList
         case t if t =:= typeOf[Array[String]] =>

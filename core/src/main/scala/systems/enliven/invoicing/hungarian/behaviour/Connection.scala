@@ -188,7 +188,7 @@ class Connection private (
             .queryInvoiceDigest(entity, page, direction, fromDate, toDate)
             .flatMap {
               case Failure(exception) => Future.failed(exception)
-              case Success(value) =>
+              case Success(value)     =>
                 log.trace(
                   "Received result for page [{}] with a total of [{}] pages available.",
                   value.invoiceDigestResult.currentPage,

@@ -21,7 +21,7 @@ class suiteError extends AnyFunSpec with invoicingSuite {
       val response = invoicing.invoices(Invoices(Nil), entity, 10.seconds)(10.seconds)
 
       response match {
-        case Success(_) => fail()
+        case Success(_)         => fail()
         case Failure(exception) =>
           log.error(
             "Failed with [{}] with message [{}]",
@@ -56,7 +56,7 @@ class suiteError extends AnyFunSpec with invoicingSuite {
         invoicing.invoices(Invoices(validInvoices :+ invoice), entity, 10.seconds)(10.seconds)
 
       response match {
-        case Success(_) => fail()
+        case Success(_)         => fail()
         case Failure(exception) =>
           log.error(
             "Failed with [{}] with message [{}]",
