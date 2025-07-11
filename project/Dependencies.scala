@@ -16,7 +16,7 @@ object Dependencies {
     "com.typesafe.akka" %% "akka-slf4j" % "2.8.0",
     "com.typesafe.akka" %% "akka-actor-typed" % "2.8.0",
     "com.typesafe.akka" %% "akka-http" % "10.5.0",
-    "org.apache.commons" % "commons-lang3" % "3.17.0",
+    "org.apache.commons" % "commons-lang3" % "3.18.0",
     "javax.xml.bind" % "jaxb-api" % "2.3.1",
     "com.softwaremill.retry" %% "retry" % "0.3.6",
     "org.bouncycastle" % "bcprov-jdk18on" % "1.81",
