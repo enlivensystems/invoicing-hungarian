@@ -8,7 +8,7 @@ import sbt.{Credentials, Test}
 lazy val commonSettings = Seq(
   organizationName := "Enliven Systems Kft.",
   organization := "systems.enliven.invoicing.hungarian",
-  scalaVersion := "2.13.16",
+  scalaVersion := "2.13.17",
   semanticdbEnabled := true,
   semanticdbVersion := scalafixSemanticdb.revision,
   addCompilerPlugin(scalafixSemanticdb),
