@@ -7,7 +7,7 @@ object Dependencies {
     "org.scala-lang.modules" %% "scala-xml" % "2.1.0",
     "org.scala-lang.modules" %% "scala-parser-combinators" % "2.2.0",
     "org.scala-lang.modules" %% "scala-parallel-collections" % "1.2.0",
-    "org.http4s" %% "http4s-ember-client" % "0.23.32",
+    "org.http4s" %% "http4s-ember-client" % "0.23.33",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.6",
     "org.slf4j" % "slf4j-api" % "2.0.17",
     "org.apache.logging.log4j" % "log4j-slf4j2-impl" % "2.25.2",
