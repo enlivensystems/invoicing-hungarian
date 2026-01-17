@@ -5,13 +5,8 @@ import net.datafaker.Faker
 import org.apache.commons.lang3.RandomStringUtils
 import systems.enliven.invoicing.hungarian.api.data.{Address, TaxNumber, Validation}
 import systems.enliven.invoicing.hungarian.api.recipient.{
-  DomesticGroupVATSubject,
-  DomesticTaxablePerson,
-  EUTaxablePerson,
-  NonEUTaxablePerson,
-  NonTaxableNonPrivatePerson,
-  PrivatePerson,
-  Recipient
+  DomesticGroupVATSubject, DomesticTaxablePerson, EUTaxablePerson, NonEUTaxablePerson,
+  NonTaxableNonPrivatePerson, PrivatePerson, Recipient
 }
 
 object TestDataGenerator {

@@ -21,13 +21,19 @@ case class Item(
   def netUnitPriceHUF(exchangeRate: BigDecimal): BigDecimal =
     (netUnitPrice * exchangeRate).setScale(2, BigDecimal.RoundingMode.HALF_UP)
 
-  def netPriceHUF(exchangeRate: BigDecimal): BigDecimal =
-    (netPrice * exchangeRate).setScale(2, BigDecimal.RoundingMode.HALF_UP)
+  def netPriceHUF(exchangeRate: BigDecimal): BigDecimal = (netPrice * exchangeRate).setScale(
+    2,
+    BigDecimal.RoundingMode.HALF_UP
+  )
 
-  def vatPriceHUF(exchangeRate: BigDecimal): BigDecimal =
-    (vatPrice * exchangeRate).setScale(2, BigDecimal.RoundingMode.HALF_UP)
+  def vatPriceHUF(exchangeRate: BigDecimal): BigDecimal = (vatPrice * exchangeRate).setScale(
+    2,
+    BigDecimal.RoundingMode.HALF_UP
+  )
 
-  def grossPriceHUF(exchangeRate: BigDecimal): BigDecimal =
-    (grossPrice * exchangeRate).setScale(2, BigDecimal.RoundingMode.HALF_UP)
+  def grossPriceHUF(exchangeRate: BigDecimal): BigDecimal = (grossPrice * exchangeRate).setScale(
+    2,
+    BigDecimal.RoundingMode.HALF_UP
+  )
 
 }
