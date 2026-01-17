@@ -11,12 +11,8 @@ import systems.enliven.invoicing.hungarian.behaviour.Connection.Protocol
 import systems.enliven.invoicing.hungarian.core
 import systems.enliven.invoicing.hungarian.core.{Configuration, Logger}
 import systems.enliven.invoicing.hungarian.generated.{
-  InvoiceDirectionType,
-  ManageInvoiceResponse,
-  QueryInvoiceDataResponse,
-  QueryInvoiceDigestResponse,
-  QueryTransactionStatusResponse,
-  TokenExchangeResponse
+  InvoiceDirectionType, ManageInvoiceResponse, QueryInvoiceDataResponse, QueryInvoiceDigestResponse,
+  QueryTransactionStatusResponse, TokenExchangeResponse
 }
 
 import java.util.Date

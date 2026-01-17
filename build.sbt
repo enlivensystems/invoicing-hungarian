@@ -94,18 +94,17 @@ lazy val commonSettings = Seq(
   resolvers ++= Seq("Maven Central".at("https://repo1.maven.org/maven2/"))
 )
 
-lazy val core =
-  (project in file("core"))
-    .settings(commonSettings: _*)
-    .enablePlugins(ScalaxbPlugin)
-    .settings(
-      name := "core",
-      description := "Core Hungarian Invoicing API to interface with NAV Online Invoice API 3.0.",
-      libraryDependencies ++= coreDependencies,
-      scalaxbGenerateDispatchClient := false,
-      scalaxbGenerateHttp4sClient := true,
-      scalaxbPackageName := "systems.enliven.invoicing.hungarian.generated"
-    )
+lazy val core = (project in file("core"))
+  .settings(commonSettings: _*)
+  .enablePlugins(ScalaxbPlugin)
+  .settings(
+    name := "core",
+    description := "Core Hungarian Invoicing API to interface with NAV Online Invoice API 3.0.",
+    libraryDependencies ++= coreDependencies,
+    scalaxbGenerateDispatchClient := false,
+    scalaxbGenerateHttp4sClient := true,
+    scalaxbPackageName := "systems.enliven.invoicing.hungarian.generated"
+  )
 
 lazy val invoicing = (project in file("."))
   .settings(commonSettings: _*)

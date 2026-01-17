@@ -15,35 +15,11 @@ import systems.enliven.invoicing.hungarian.api.recipient.Recipient
 import systems.enliven.invoicing.hungarian.core
 import systems.enliven.invoicing.hungarian.core.{Configuration, Logger}
 import systems.enliven.invoicing.hungarian.generated.{
-  AddressType,
-  CARD,
-  CREATE,
-  DetailedAddressType,
-  GeneralErrorResponse,
-  InvoiceDataType,
-  InvoiceDetailType,
-  InvoiceHeadType,
-  InvoiceMainType,
-  InvoiceOperationListType,
-  InvoiceOperationType,
-  InvoiceReferenceType,
-  InvoiceType,
-  LinesType,
-  MODIFY,
-  ManageInvoiceRequest,
-  ManageInvoiceResponse,
-  NORMAL,
-  ONLINE_SERVICE,
-  PIECE,
-  SERVICE,
-  STORNO,
-  SoftwareType,
-  SummaryType,
-  SupplierInfoType,
-  TaxNumberType,
-  TokenExchangeRequest,
-  TokenExchangeResponse,
-  _
+  AddressType, CARD, CREATE, DetailedAddressType, GeneralErrorResponse, InvoiceDataType,
+  InvoiceDetailType, InvoiceHeadType, InvoiceMainType, InvoiceOperationListType,
+  InvoiceOperationType, InvoiceReferenceType, InvoiceType, LinesType, MODIFY, ManageInvoiceRequest,
+  ManageInvoiceResponse, NORMAL, ONLINE_SERVICE, PIECE, SERVICE, STORNO, SoftwareType, SummaryType,
+  SupplierInfoType, TaxNumberType, TokenExchangeRequest, TokenExchangeResponse, _
 }
 
 import java.nio.charset.Charset

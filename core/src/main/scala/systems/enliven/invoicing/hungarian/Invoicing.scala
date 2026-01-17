@@ -11,13 +11,8 @@ import systems.enliven.invoicing.hungarian.behaviour.{Connection, Guardian}
 import systems.enliven.invoicing.hungarian.core.ConfigLoader.Loader
 import systems.enliven.invoicing.hungarian.core.{Configuration, Logger}
 import systems.enliven.invoicing.hungarian.generated.{
-  InvoiceDataResultType,
-  InvoiceDataType,
-  InvoiceDigestType,
-  InvoiceDirectionType,
-  ManageInvoiceResponse,
-  QueryInvoiceDataResponse,
-  QueryInvoiceDigestResponse,
+  InvoiceDataResultType, InvoiceDataType, InvoiceDigestType, InvoiceDirectionType,
+  ManageInvoiceResponse, QueryInvoiceDataResponse, QueryInvoiceDigestResponse,
   QueryTransactionStatusResponse
 }
 
