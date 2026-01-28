@@ -5,7 +5,10 @@ import scalaxb.Base64Binary
 import systems.enliven.invoicing.hungarian.api.data.Entity
 import systems.enliven.invoicing.hungarian.api.{Api, Hash}
 import systems.enliven.invoicing.hungarian.generated.{
-  CREATE, InvoiceOperationListType, InvoiceOperationType, MODIFY
+  CREATE,
+  InvoiceOperationListType,
+  InvoiceOperationType,
+  MODIFY
 }
 
 import java.time.Instant

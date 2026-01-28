@@ -4,7 +4,10 @@ import scalaxb.DataRecord
 import systems.enliven.invoicing.hungarian.api.data.{Address, Validation}
 import systems.enliven.invoicing.hungarian.core.requirement.StringRequirement._
 import systems.enliven.invoicing.hungarian.generated.{
-  AddressType, CustomerInfoType, DetailedAddressType, OTHERValue2
+  AddressType,
+  CustomerInfoType,
+  DetailedAddressType,
+  OTHERValue2
 }
 
 /**
