@@ -7,9 +7,16 @@ import java.nio.file.{FileSystems, Files, Paths}
 import java.util.Collections
 import scalaxb.XMLFormat
 import systems.enliven.invoicing.hungarian.generated.{
-  InvoiceData, ManageAnnulmentRequest, ManageInvoiceRequest, QueryInvoiceChainDigestRequest,
-  QueryInvoiceCheckRequest, QueryInvoiceDataRequest, QueryInvoiceDigestRequest,
-  QueryTaxpayerRequest, QueryTransactionListRequest, QueryTransactionStatusRequest,
+  InvoiceData,
+  ManageAnnulmentRequest,
+  ManageInvoiceRequest,
+  QueryInvoiceChainDigestRequest,
+  QueryInvoiceCheckRequest,
+  QueryInvoiceDataRequest,
+  QueryInvoiceDigestRequest,
+  QueryTaxpayerRequest,
+  QueryTransactionListRequest,
+  QueryTransactionStatusRequest,
   TokenExchangeRequest
 }
 

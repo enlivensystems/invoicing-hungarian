@@ -6,7 +6,11 @@ import scalaxb.DataRecord.__StringXMLFormat
 import systems.enliven.invoicing.hungarian.api.data.Entity
 import systems.enliven.invoicing.hungarian.core.Logger
 import systems.enliven.invoicing.hungarian.generated.{
-  BasicHeaderType, CryptoType, Number1u460, Number3u460, UserHeaderType
+  BasicHeaderType,
+  CryptoType,
+  Number1u460,
+  Number3u460,
+  UserHeaderType
 }
 
 import java.time.format.DateTimeFormatter
