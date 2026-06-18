@@ -21,7 +21,7 @@ object Dependencies {
     "com.softwaremill.retry" %% "retry" % "0.3.6",
     "org.bouncycastle" % "bcprov-jdk18on" % "1.84",
     "joda-time" % "joda-time" % "2.14.2",
-    "net.datafaker" % "datafaker" % "2.5.4",
+    "net.datafaker" % "datafaker" % "2.6.0",
     "com.github.mifmif" % "generex" % "1.0.2"
   )
 
